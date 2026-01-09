@@ -1,5 +1,9 @@
 import { getProducts } from "@/lib/woo";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
+
 export default async function Home() {
   const products = await getProducts(6);
 
