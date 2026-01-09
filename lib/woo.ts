@@ -1,4 +1,6 @@
 // lib/woo.ts
+import "server-only";
+
 const WP_BASE = process.env.WP_BASE_URL!;
 const CK = process.env.WC_CONSUMER_KEY!;
 const CS = process.env.WC_CONSUMER_SECRET!;
@@ -14,10 +16,20 @@ type CategoryOptions = {
   perPage?: number;
 };
 
+function assertEnv() {
+  if (!WP_BASE) throw new Error("Missing env: WP_BASE_URL");
+  if (!CK) throw new Error("Missing env: WC_CONSUMER_KEY");
+  if (!CS) throw new Error("Missing env: WC_CONSUMER_SECRET");
+}
+
+// Headers más “normales” para evitar challenge/bots.
+// No cambia tu autenticación; solo la hace más compatible.
 function getAuthHeader() {
   return {
     Authorization: "Basic " + Buffer.from(`${CK}:${CS}`).toString("base64"),
-  };
+    Accept: "application/json",
+    "User-Agent": "NextHeadless/Vercel",
+  } as Record<string, string>;
 }
 
 async function wooFetch<T = any>(
@@ -25,7 +37,9 @@ async function wooFetch<T = any>(
   params: Record<string, string> = {},
   opts: WooFetchOptions = {}
 ): Promise<T> {
-  const url = new URL(`${WP_BASE}/wp-json/wc/v3/${path}`);
+  assertEnv();
+
+  const url = new URL(`${WP_BASE.replace(/\/+$/, "")}/wp-json/wc/v3/${path.replace(/^\/+/, "")}`);
 
   Object.entries(params).forEach(([key, value]) => {
     url.searchParams.set(key, value);
@@ -36,6 +50,7 @@ async function wooFetch<T = any>(
   const cache: RequestCache = opts.cache ?? (hasRevalidate ? "force-cache" : "no-store");
 
   const res = await fetch(url.toString(), {
+    method: "GET",
     headers: getAuthHeader(),
     cache,
     ...(hasRevalidate || (opts.tags && opts.tags.length)
@@ -45,7 +60,42 @@ async function wooFetch<T = any>(
 
   if (!res.ok) {
     const text = await res.text();
+
+    // Diagnóstico explícito: cuando Cloudflare devuelve HTML challenge.
+    const isHtmlChallenge =
+      text.includes("<!DOCTYPE html") ||
+      text.toLowerCase().includes("just a moment") ||
+      text.toLowerCase().includes("cloudflare");
+
+    if (isHtmlChallenge) {
+      throw new Error(
+        `Woo API blocked by Cloudflare (HTML challenge). Status ${res.status}. ` +
+        `URL: ${url.toString()}`
+      );
+    }
+
     throw new Error(`Woo API error ${res.status}: ${text}`);
+  }
+
+  // A veces Cloudflare manda 200 pero con HTML (menos común, pero pasa).
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    const text = await res.text();
+    const isHtml =
+      text.includes("<!DOCTYPE html") ||
+      text.toLowerCase().includes("just a moment") ||
+      text.toLowerCase().includes("cloudflare");
+
+    if (isHtml) {
+      throw new Error(
+        `Woo API returned HTML (Cloudflare challenge). ` +
+        `URL: ${url.toString()}`
+      );
+    }
+
+    throw new Error(
+      `Woo API unexpected content-type "${contentType}". URL: ${url.toString()}`
+    );
   }
 
   return res.json();
