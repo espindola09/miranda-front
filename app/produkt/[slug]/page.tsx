@@ -1,5 +1,6 @@
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
+import { PL } from "@/lib/i18n/pl";
 
 export default async function ProductPage({
   params,
@@ -15,6 +16,8 @@ export default async function ProductPage({
 
   // Precio: preferimos price_html si existe (mejor formato), sino fallback
   const priceHtml = (product as any)?.price_html as string | undefined;
+
+  const isInStock = product.stock_status === "instock";
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -87,17 +90,19 @@ export default async function ProductPage({
             <div className="mt-5 flex flex-wrap gap-2 text-xs">
               {product.sku ? (
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                  SKU: {product.sku}
+                  {PL.sku}: {product.sku}
                 </span>
               ) : null}
+
               {product.stock_status ? (
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                  Stock: {product.stock_status}
+                  {PL.stock}: {isInStock ? PL.inStock : PL.outOfStock}
                 </span>
               ) : null}
+
               {product.categories?.[0]?.name ? (
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                  Category: {product.categories[0].name}
+                  {PL.category}: {product.categories[0].name}
                 </span>
               ) : null}
             </div>
@@ -118,13 +123,13 @@ export default async function ProductPage({
                 type="button"
                 className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
               >
-                Add to cart (next step)
+                {PL.addToCart}
               </button>
               <button
                 type="button"
                 className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
               >
-                Add to wishlist (later)
+                {PL.addToWishlist}
               </button>
             </div>
 
@@ -132,7 +137,7 @@ export default async function ProductPage({
             {product.description ? (
               <div className="mt-8">
                 <h2 className="text-lg font-semibold text-white/90 mb-3">
-                  Description
+                  {PL.description}
                 </h2>
                 <div
                   className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
