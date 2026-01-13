@@ -1,129 +1,274 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+
+type Img = { id?: number; src: string; alt?: string };
 
 type Props = {
-  maxWidthCm: number;   // desde product.dimensions.width
-  maxHeightCm: number;  // desde product.dimensions.height
-  defaultWidthCm?: number;  // por defecto 70
-  defaultHeightCm?: number; // por defecto 100
-  maxPanelWidthCm?: number; // por defecto 100
+  productName: string;
+  images: Img[];
+
+  maxWidthCm: number;
+  maxHeightCm: number;
+
+  defaultWidthCm?: number;
+  defaultHeightCm?: number;
+
+  // panel width cap (como tu lógica: 100cm por panel)
+  maxPanelWidthCm?: number;
 };
 
 function clamp(n: number, min: number, max: number) {
+  if (!Number.isFinite(n)) return min;
   return Math.max(min, Math.min(max, n));
 }
 
-function toInt(value: string) {
-  const n = Number(String(value).replace(",", "."));
-  if (!Number.isFinite(n)) return NaN;
-  return Math.round(n);
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
+
+// Íconos inline (sin dependencias)
+function IconFlipX() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M7 7h2v10H7V7Zm8.5 0L21 12l-5.5 5v-3H11v-4h4.5V7ZM3 12l5.5-5v3H13v4H8.5v3L3 12Z"
+      />
+    </svg>
+  );
+}
+
+function IconFlipY() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M7 7h10v2H7V7Zm0 8h10v2H7v-2Zm5-12 5 5h-3.5V12h-3V8H7l5-5Zm0 18-5-5h3.5V12h3v4H17l-5 5Z"
+      />
+    </svg>
+  );
+}
+
+function IconZoom() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M10 18a8 8 0 1 1 5.29-14.01A8 8 0 0 1 10 18Zm0-2a6 6 0 1 0-6-6a6 6 0 0 0 6 6Zm11 5-5.2-5.2 1.4-1.4L22.4 19.6 21 21Zm-12-9h2V9h2V7h-2V5H9v2H7v2h2v3Z"
+      />
+    </svg>
+  );
 }
 
 export default function FototapetyConfigurator({
+  productName,
+  images,
   maxWidthCm,
   maxHeightCm,
   defaultWidthCm = 70,
   defaultHeightCm = 100,
   maxPanelWidthCm = 100,
 }: Props) {
-  const hasMaxW = Number.isFinite(maxWidthCm) && maxWidthCm > 0;
-  const hasMaxH = Number.isFinite(maxHeightCm) && maxHeightCm > 0;
+  // Imagen seleccionada (thumbs)
+  const [activeIdx, setActiveIdx] = useState(0);
+  const active = images?.[activeIdx]?.src || "";
 
-  const initW = hasMaxW ? clamp(defaultWidthCm, 1, maxWidthCm) : defaultWidthCm;
-  const initH = hasMaxH ? clamp(defaultHeightCm, 1, maxHeightCm) : defaultHeightCm;
+  // Transformaciones (flip/zoom)
+  const [flipX, setFlipX] = useState(false);
+  const [flipY, setFlipY] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
-  const [w, setW] = useState<number>(initW);
-  const [h, setH] = useState<number>(initH);
+  // Medidas input
+  const [w, setW] = useState<number>(defaultWidthCm);
+  const [h, setH] = useState<number>(defaultHeightCm);
 
-  // Si cambian máximos (por ejemplo otro producto), re-clamp
-  useEffect(() => {
-    setW((prev) => (hasMaxW ? clamp(prev || initW, 1, maxWidthCm) : prev || initW));
-    setH((prev) => (hasMaxH ? clamp(prev || initH, 1, maxHeightCm) : prev || initH));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [maxWidthCm, maxHeightCm]);
+  // Normalización de máximos (si WP no los tiene aún)
+  const maxW = Number.isFinite(maxWidthCm) && maxWidthCm > 0 ? maxWidthCm : 0;
+  const maxH = Number.isFinite(maxHeightCm) && maxHeightCm > 0 ? maxHeightCm : 0;
 
-  const areaM2 = useMemo(() => {
-    const val = (w * h) / 10000;
-    // 2 decimales como en Woo
-    return Number.isFinite(val) ? val.toFixed(2) : "0.00";
-  }, [w, h]);
+  // Validación/clamp: 1..max (si max > 0); si no hay max, 1..9999
+  const wClamped = useMemo(() => {
+    const upper = maxW > 0 ? maxW : 9999;
+    return clamp(Number(w || 0), 1, upper);
+  }, [w, maxW]);
 
-  const panelsInfo = useMemo(() => {
-    // Regla: paneles por ancho, maxPanelWidthCm
-    const panels = Math.max(1, Math.ceil(w / maxPanelWidthCm));
-    const panelWidth = Math.max(1, Math.round(w / panels));
-    return { panels, panelWidth };
-  }, [w, maxPanelWidthCm]);
+  const hClamped = useMemo(() => {
+    const upper = maxH > 0 ? maxH : 9999;
+    return clamp(Number(h || 0), 1, upper);
+  }, [h, maxH]);
 
-  const handleBlurWidth = (raw: string) => {
-    const n = toInt(raw);
-    if (!Number.isFinite(n) || n <= 0) {
-      setW(initW);
-      return;
-    }
-    setW(hasMaxW ? clamp(n, 1, maxWidthCm) : Math.max(1, n));
+  // Cálculos: Powierzchnia / Wymiary / Bryty
+  const areaM2 = useMemo(
+    () => round2((wClamped * hClamped) / 10000),
+    [wClamped, hClamped]
+  );
+
+  const panels = useMemo(() => {
+    // cantidad de paneles: ceil(width / maxPanelWidth)
+    const panelCount = Math.max(1, Math.ceil(wClamped / maxPanelWidthCm));
+    // ancho del panel redondeado (como tu ejemplo)
+    const panelWidth = Math.round(wClamped / panelCount);
+    return { panelCount, panelWidth };
+  }, [wClamped, maxPanelWidthCm]);
+
+  const onReset = () => {
+    setFlipX(false);
+    setFlipY(false);
+    setZoom(1);
+    setW(defaultWidthCm);
+    setH(defaultHeightCm);
   };
 
-  const handleBlurHeight = (raw: string) => {
-    const n = toInt(raw);
-    if (!Number.isFinite(n) || n <= 0) {
-      setH(initH);
-      return;
-    }
-    setH(hasMaxH ? clamp(n, 1, maxHeightCm) : Math.max(1, n));
+  const cycleZoom = () => {
+    // 1x -> 1.5x -> 2x -> 1x
+    setZoom((z) => {
+      if (z < 1.5) return 1.5;
+      if (z < 2) return 2;
+      return 1;
+    });
   };
+
+  // Importante: orden estable de transforms para evitar “saltos”
+  const transform = `scaleX(${flipX ? -1 : 1}) scaleY(${flipY ? -1 : 1}) scale(${zoom})`;
 
   return (
-    <section className="mt-8">
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {/* Szerokość */}
+    <div>
+      {/* IMAGEN PRINCIPAL */}
+      <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
+        {active ? (
+          // ✅ Viewport: la imagen adentro, controles afuera
+          <div className="w-full overflow-hidden">
+            <img
+              src={active}
+              alt={productName}
+              className="w-full h-auto block object-cover origin-center transition-transform duration-200"
+              style={{ transform }}
+              loading="eager"
+            />
+          </div>
+        ) : (
+          <div className="p-14 text-white/50">No image</div>
+        )}
+      </div>
+
+      {/* ✅ CONTROLES DEBAJO DE LA IMAGEN (no overlay) */}
+      {active ? (
+        <div className="mt-3 flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setFlipX((v) => !v)}
+            className="h-9 w-9 rounded-md bg-[#c9b086] text-black hover:opacity-90 transition grid place-items-center shadow"
+            aria-label="Odwróć w poziomie"
+            title="Odwróć w poziomie"
+          >
+            <IconFlipX />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setFlipY((v) => !v)}
+            className="h-9 w-9 rounded-md bg-[#c9b086] text-black hover:opacity-90 transition grid place-items-center shadow"
+            aria-label="Odwróć w pionie"
+            title="Odwróć w pionie"
+          >
+            <IconFlipY />
+          </button>
+
+          <button
+            type="button"
+            onClick={cycleZoom}
+            className="h-9 w-9 rounded-md bg-[#c9b086] text-black hover:opacity-90 transition grid place-items-center shadow"
+            aria-label="Powiększ"
+            title="Powiększ"
+          >
+            <IconZoom />
+          </button>
+
+          <button
+            type="button"
+            onClick={onReset}
+            className="h-9 rounded-md px-3 bg-white/10 border border-white/15 text-white hover:bg-white/15 transition shadow"
+          >
+            Reset
+          </button>
+        </div>
+      ) : null}
+
+      {/* THUMBS */}
+      {images?.length > 1 ? (
+        <div className="mt-4 grid grid-cols-5 gap-3">
+          {images.slice(0, 5).map((img: any, idx: number) => {
+            const isActive = idx === activeIdx;
+            return (
+              <button
+                key={img.id ?? `${img.src}-${idx}`}
+                type="button"
+                onClick={() => setActiveIdx(idx)}
+                className={[
+                  "rounded-xl overflow-hidden border bg-white/5",
+                  isActive ? "border-[#c9b086]" : "border-white/10",
+                ].join(" ")}
+                title={img.alt || productName}
+              >
+                <img
+                  src={img.src}
+                  alt={img.alt || productName}
+                  className="w-full h-16 block object-cover"
+                  loading="lazy"
+                />
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+
+      {/* BARRA INFO (Powierzchnia/Wymiary/Bryty) */}
+      <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
+        <span className="font-semibold">Powierzchnia:</span>{" "}
+        {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
+        <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
+        <span className="text-white/40">|</span>{" "}
+        <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
+        {panels.panelWidth} cm
+      </div>
+
+      {/* INPUTS */}
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-xs text-white/70 mb-2">
-            Szerokość (cm) <span className="text-red-500">*</span>
+          <label className="block text-sm text-white/80 mb-2">
+            Szerokość (cm) <span className="text-red-400">*</span>
           </label>
           <input
-            type="number"
+            value={String(w)}
+            onChange={(e) => setW(Number(e.target.value))}
+            onBlur={() => setW(wClamped)}
             inputMode="numeric"
-            className="w-full rounded-md border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-white/30"
-            defaultValue={w}
-            min={1}
-            max={hasMaxW ? maxWidthCm : undefined}
-            onBlur={(e) => handleBlurWidth(e.target.value)}
+            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+            placeholder={String(defaultWidthCm)}
           />
           <div className="mt-2 text-xs text-white/60">
-            {hasMaxW ? <>Max: {maxWidthCm} cm</> : <>&nbsp;</>}
+            Max: {maxW > 0 ? `${maxW} cm` : "—"}
           </div>
         </div>
 
-        {/* Wysokość */}
         <div>
-          <label className="block text-xs text-white/70 mb-2">
-            Wysokość (cm) <span className="text-red-500">*</span>
+          <label className="block text-sm text-white/80 mb-2">
+            Wysokość (cm) <span className="text-red-400">*</span>
           </label>
           <input
-            type="number"
+            value={String(h)}
+            onChange={(e) => setH(Number(e.target.value))}
+            onBlur={() => setH(hClamped)}
             inputMode="numeric"
-            className="w-full rounded-md border border-white/15 bg-white/5 px-4 py-3 text-white outline-none focus:border-white/30"
-            defaultValue={h}
-            min={1}
-            max={hasMaxH ? maxHeightCm : undefined}
-            onBlur={(e) => handleBlurHeight(e.target.value)}
+            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+            placeholder={String(defaultHeightCm)}
           />
           <div className="mt-2 text-xs text-white/60">
-            {hasMaxH ? <>Max: {maxHeightCm} cm</> : <>&nbsp;</>}
+            Max: {maxH > 0 ? `${maxH} cm` : "—"}
           </div>
         </div>
       </div>
-
-      {/* Barra gris tipo WP */}
-      <div className="mt-6 rounded-md bg-white text-black px-4 py-3 text-sm font-semibold">
-        <span>Powierzchnia: {areaM2} m²</span>
-        <span className="mx-2">|</span>
-        <span>Wymiary: {w}x{h} cm</span>
-        <span className="mx-2">|</span>
-        <span>Bryty: {panelsInfo.panels} x {panelsInfo.panelWidth} cm</span>
-      </div>
-    </section>
+    </div>
   );
 }

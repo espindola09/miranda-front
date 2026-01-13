@@ -1,135 +1,116 @@
 "use client";
 
-import * as React from "react";
-
-type Img = {
-  id?: number;
-  src: string;
-  alt?: string;
-};
+import { useMemo, useState } from "react";
 
 type Props = {
-  images: Img[];
-  productName: string;
+  src: string;
+  alt?: string;
+  className?: string;
+
+  // Opcional: si querés arrancar con zoom 2x, etc.
+  initialZoom?: number;
 };
 
-const ZOOM_LEVELS = [1, 1.25, 1.5, 2] as const;
+export default function ProductImageViewer({
+  src,
+  alt = "",
+  className = "",
+  initialZoom = 1,
+}: Props) {
+  const [flipX, setFlipX] = useState(false);
+  const [flipY, setFlipY] = useState(false);
+  const [zoom, setZoom] = useState<number>(initialZoom);
 
-export default function ProductImageViewer({ images, productName }: Props) {
-  const main = images?.[0]?.src || "";
-  const [flipX, setFlipX] = React.useState(false);
-  const [flipY, setFlipY] = React.useState(false);
-  const [zoomIdx, setZoomIdx] = React.useState(0);
-
-  const zoom = ZOOM_LEVELS[zoomIdx] ?? 1;
-
-  const transform = React.useMemo(() => {
-    // Aplicamos zoom + flips en una sola transformación
-    const sx = (flipX ? -1 : 1) * zoom;
-    const sy = (flipY ? -1 : 1) * zoom;
-    return `translateZ(0) scaleX(${sx}) scaleY(${sy})`;
+  const transform = useMemo(() => {
+    const sx = flipX ? -1 : 1;
+    const sy = flipY ? -1 : 1;
+    return `scale(${sx * zoom}, ${sy * zoom})`;
   }, [flipX, flipY, zoom]);
 
-  const toggleZoom = () => {
-    setZoomIdx((i) => (i + 1) % ZOOM_LEVELS.length);
-  };
-
-  const reset = () => {
+  function reset() {
     setFlipX(false);
     setFlipY(false);
-    setZoomIdx(0);
-  };
-
-  if (!main) {
-    return (
-      <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
-        <div className="p-14 text-white/50">No image</div>
-      </div>
-    );
+    setZoom(1);
   }
 
+  function toggleFlipX() {
+    setFlipX((v) => !v);
+  }
+
+  function toggleFlipY() {
+    setFlipY((v) => !v);
+  }
+
+  function cycleZoom() {
+    // 1x -> 2x -> 3x -> 1x
+    setZoom((z) => {
+      if (z < 2) return 2;
+      if (z < 3) return 3;
+      return 1;
+    });
+  }
+
+  // Label compacto tipo "Zoom: 2x"
+  const zoomLabel = `Zoom: ${zoom}x`;
+
   return (
-    <div className="self-start">
-      {/* Imagen principal */}
+    <div className={className}>
+      {/* IMAGEN (sin overlays) */}
       <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
         <div className="relative w-full">
           <img
-            src={main}
-            alt={productName}
-            className="w-full h-auto block object-cover select-none"
-            loading="eager"
+            src={src}
+            alt={alt}
+            className="w-full h-auto block object-cover origin-center"
             style={{
               transform,
-              transformOrigin: "center center",
-              willChange: "transform",
+              transition: "transform 160ms ease",
             }}
-            draggable={false}
+            loading="eager"
           />
         </div>
       </div>
 
-      {/* Controles */}
-      <div className="mt-4 flex flex-wrap gap-3">
+      {/* CONTROLES DEBAJO (bloque normal) */}
+      <div className="mt-3 flex items-center justify-center gap-2">
         <button
           type="button"
-          onClick={() => setFlipX((v) => !v)}
-          className="rounded-xl border border-white/15 bg-white/5 text-white/90 font-semibold px-4 py-2 hover:bg-white/10 transition"
-          aria-label="Odwróć poziomo (lewo-prawo)"
-          title="Odwróć poziomo (lewo-prawo)"
+          onClick={toggleFlipX}
+          aria-label="Odwróć poziomo"
+          title="Odwróć poziomo"
+          className="h-10 w-10 rounded-lg bg-[#c9b086] text-black font-semibold hover:opacity-90 transition inline-flex items-center justify-center"
         >
-          ↔ Odwróć
+          ↔
         </button>
 
         <button
           type="button"
-          onClick={() => setFlipY((v) => !v)}
-          className="rounded-xl border border-white/15 bg-white/5 text-white/90 font-semibold px-4 py-2 hover:bg-white/10 transition"
-          aria-label="Odwróć pionowo (góra-dół)"
-          title="Odwróć pionowo (góra-dół)"
+          onClick={toggleFlipY}
+          aria-label="Odwróć pionowo"
+          title="Odwróć pionowo"
+          className="h-10 w-10 rounded-lg bg-[#c9b086] text-black font-semibold hover:opacity-90 transition inline-flex items-center justify-center"
         >
-          ↕ Odwróć
+          ↕
         </button>
 
         <button
           type="button"
-          onClick={toggleZoom}
-          className="rounded-xl border border-white/15 bg-white/5 text-white/90 font-semibold px-4 py-2 hover:bg-white/10 transition"
-          aria-label="Powiększenie"
-          title="Powiększenie"
+          onClick={cycleZoom}
+          aria-label={zoomLabel}
+          title={zoomLabel}
+          className="h-10 w-10 rounded-lg bg-[#c9b086] text-black font-semibold hover:opacity-90 transition inline-flex items-center justify-center"
         >
-          🔎 Zoom: {zoom}x
+          🔍
         </button>
 
         <button
           type="button"
           onClick={reset}
-          className="rounded-xl border border-white/15 bg-white/5 text-white/70 font-semibold px-4 py-2 hover:bg-white/10 transition"
-          aria-label="Resetuj"
-          title="Resetuj"
+          className="h-10 px-4 rounded-lg border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 transition"
         >
           Reset
         </button>
       </div>
-
-      {/* Thumbs (si hay más de una imagen) */}
-      {images?.length > 1 ? (
-        <div className="mt-4 grid grid-cols-5 gap-3">
-          {images.slice(0, 5).map((img, idx) => (
-            <div
-              key={img.id ?? `${img.src}-${idx}`}
-              className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
-              title={img.alt || productName}
-            >
-              <img
-                src={img.src}
-                alt={img.alt || productName}
-                className="w-full h-16 block object-cover"
-                loading="lazy"
-              />
-            </div>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }

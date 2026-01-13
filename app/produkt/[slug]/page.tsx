@@ -23,20 +23,15 @@ export default async function ProductPage({
   if (!product) notFound();
 
   const priceHtml = (product as any)?.price_html as string | undefined;
-
   const isFototapety = isFototapetyProduct(product);
 
   // Máximos desde dimensiones (solo Fototapety los tiene cargados)
   const maxWidthCm = Number((product as any)?.dimensions?.width || 0);
   const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
 
-  // Normalizamos imágenes para el viewer
-  const images =
-    (product.images || []).map((img: any) => ({
-      id: img.id,
-      src: img.src,
-      alt: img.alt,
-    })) ?? [];
+  // Imágenes
+  const images = Array.isArray(product.images) ? product.images : [];
+  const mainImageUrl = images?.[0]?.src || "";
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -49,25 +44,53 @@ export default async function ProductPage({
         </div>
 
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-          {/* GALERÍA / IMAGEN + CONTROLES */}
+          {/* IZQUIERDA: IMAGEN / CONFIG */}
           <section className="self-start">
-            <ProductImageViewer images={images} productName={product.name} />
-
-            {/* ✅ Fototapety configurator (inputs + Powierzchnia/Wymiary/Bryty) */}
             {isFototapety ? (
-              <div className="mt-5">
-                <FototapetyConfigurator
-                  maxWidthCm={Number.isFinite(maxWidthCm) ? maxWidthCm : 0}
-                  maxHeightCm={Number.isFinite(maxHeightCm) ? maxHeightCm : 0}
-                  defaultWidthCm={70}
-                  defaultHeightCm={100}
-                  maxPanelWidthCm={100}
-                />
-              </div>
-            ) : null}
+              <FototapetyConfigurator
+                productName={product.name}
+                images={images}
+                maxWidthCm={Number.isFinite(maxWidthCm) ? maxWidthCm : 0}
+                maxHeightCm={Number.isFinite(maxHeightCm) ? maxHeightCm : 0}
+                defaultWidthCm={70}
+                defaultHeightCm={100}
+                maxPanelWidthCm={100}
+              />
+            ) : (
+              <>
+                {/* ✅ Viewer con controles DEBAJO (tu ProductImageViewer ya lo hace así) */}
+                {mainImageUrl ? (
+                  <ProductImageViewer src={mainImageUrl} alt={product.name} />
+                ) : (
+                  <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
+                    <div className="p-14 text-white/50">No image</div>
+                  </div>
+                )}
+
+                {/* Thumbs placeholder */}
+                {images.length > 1 ? (
+                  <div className="mt-4 grid grid-cols-5 gap-3">
+                    {images.slice(0, 5).map((img: any, idx: number) => (
+                      <div
+                        key={img.id ?? `${img.src}-${idx}`}
+                        className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
+                        title={img.alt || product.name}
+                      >
+                        <img
+                          src={img.src}
+                          alt={img.alt || product.name}
+                          className="w-full h-16 block object-cover"
+                          loading="lazy"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </>
+            )}
           </section>
 
-          {/* INFO */}
+          {/* DERECHA: INFO */}
           <section className="min-w-0">
             <h1 className="text-3xl md:text-4xl font-bold leading-tight">
               {product.name}
