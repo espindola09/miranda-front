@@ -14,21 +14,21 @@ type Props = {
   defaultWidthCm?: number;
   defaultHeightCm?: number;
 
-  // panel width cap (100cm por panel)
   maxPanelWidthCm?: number;
 
-  // Price + CTA (del server)
-  priceHtml?: string;
-  fallbackPrice?: string;
-
-  // Right-side info
   shortDescriptionHtml?: string;
   descriptionHtml?: string;
 
-  // Meta chips
   sku?: string | null;
   stockStatus?: string | null;
   categoryName?: string | null;
+
+  // ✅ Precio numérico confiable
+  onSale?: boolean;
+  regularPrice?: string; // "69.87"
+  salePrice?: string; // "41.92"
+  currentPrice?: string; // "41.92" o el que corresponda
+  currency?: string; // "zł"
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -82,24 +82,24 @@ export default function FototapetyProductClient({
   defaultWidthCm = 70,
   defaultHeightCm = 100,
   maxPanelWidthCm = 100,
-  priceHtml,
-  fallbackPrice,
   shortDescriptionHtml,
   descriptionHtml,
   sku,
   stockStatus,
   categoryName,
+  onSale = false,
+  regularPrice = "",
+  salePrice = "",
+  currentPrice = "",
+  currency = "zł",
 }: Props) {
-  // Imagen seleccionada (thumbs)
   const [activeIdx, setActiveIdx] = useState(0);
   const active = images?.[activeIdx]?.src || "";
 
-  // Transformaciones (flip/zoom)
   const [flipX, setFlipX] = useState(false);
   const [flipY, setFlipY] = useState(false);
   const [zoom, setZoom] = useState(1);
 
-  // Medidas input (✅ ahora viven acá y se renderizan a la DERECHA)
   const [w, setW] = useState<number>(defaultWidthCm);
   const [h, setH] = useState<number>(defaultHeightCm);
 
@@ -150,11 +150,12 @@ export default function FototapetyProductClient({
   const stockLabel =
     stockStatus === "instock" ? "Dostępny" : stockStatus || "";
 
+  // ✅ Determinar qué mostrar (siempre consistente)
+  const showSale = Boolean(onSale && regularPrice && salePrice);
+
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-      {/* =========================
-          IZQUIERDA: imagen + botones + thumbs + barra
-         ========================= */}
+      {/* IZQUIERDA */}
       <section className="self-start">
         <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
           {active ? (
@@ -172,7 +173,6 @@ export default function FototapetyProductClient({
           )}
         </div>
 
-        {/* ✅ CONTROLES DEBAJO de la imagen (no absolute) */}
         <div className="mt-4 flex items-center justify-center gap-2">
           <button
             type="button"
@@ -213,7 +213,6 @@ export default function FototapetyProductClient({
           </button>
         </div>
 
-        {/* THUMBS */}
         {images?.length > 1 ? (
           <div className="mt-4 grid grid-cols-5 gap-3">
             {images.slice(0, 5).map((img: any, idx: number) => {
@@ -241,7 +240,6 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* BARRA INFO */}
         <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
           <span className="font-semibold">Powierzchnia:</span>{" "}
           {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
@@ -252,16 +250,12 @@ export default function FototapetyProductClient({
         </div>
       </section>
 
-      {/* =========================
-          DERECHA: título más chico + inputs + precio + CTA + descripciones
-         ========================= */}
+      {/* DERECHA */}
       <section className="min-w-0">
-        {/* ✅ TÍTULO más chico */}
         <h1 className="text-2xl md:text-3xl font-bold leading-tight">
           {productName}
         </h1>
 
-        {/* Meta rápida */}
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           {sku ? (
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
@@ -282,7 +276,7 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* ✅ DIMENSIONES a la DERECHA */}
+        {/* DIMENSIONES */}
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm text-white/80 mb-2">
@@ -319,7 +313,6 @@ export default function FototapetyProductClient({
           </div>
         </div>
 
-        {/* Descripción corta */}
         {shortDescriptionHtml ? (
           <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
             <div
@@ -329,21 +322,24 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* ✅ PRECIO sin leyendas y ARRIBA del CTA */}
+        {/* ✅ PRECIO: siempre muestra tachado + actual si hay rebaja */}
         <div className="mt-6">
-          {priceHtml ? (
-            <div
-              className="text-2xl md:text-3xl font-semibold text-white/90"
-              dangerouslySetInnerHTML={{ __html: priceHtml }}
-            />
+          {showSale ? (
+            <div className="text-lg md:text-xl font-semibold text-white/90 flex items-baseline gap-3">
+              <del className="opacity-60">
+                {regularPrice} {currency}
+              </del>
+              <span>
+                {salePrice} {currency}
+              </span>
+            </div>
           ) : (
-            <p className="text-2xl md:text-3xl font-semibold text-white/90">
-              {fallbackPrice || ""}
-            </p>
+            <div className="text-lg md:text-xl font-semibold text-white/90">
+              {(currentPrice || "")} {currency}
+            </div>
           )}
         </div>
 
-        {/* CTA */}
         <div className="mt-4 flex flex-col gap-3 sm:flex-row">
           <button
             type="button"
@@ -359,7 +355,6 @@ export default function FototapetyProductClient({
           </button>
         </div>
 
-        {/* Descripción larga */}
         {descriptionHtml ? (
           <div className="mt-8">
             <h2 className="text-lg font-semibold text-white/90 mb-3">Opis</h2>
