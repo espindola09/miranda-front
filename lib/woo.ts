@@ -2,13 +2,37 @@
 import "server-only";
 
 const WP_BASE = process.env.WP_BASE_URL!;
-const CK = process.env.WC_CONSUMER_KEY!;
-const CS = process.env.WC_CONSUMER_SECRET!;
+
+/**
+ * SECURITY: Separate credentials by capability (catalog vs orders)
+ * - Prefer READ-only keys for products/categories.
+ * - Use separate ORDERS keys for write operations (future).
+ * - Backward compatible with WC_CONSUMER_KEY / WC_CONSUMER_SECRET.
+ */
+const CK_READ =
+  process.env.WC_CONSUMER_KEY_READ ??
+  process.env.WC_CONSUMER_KEY ??
+  "";
+const CS_READ =
+  process.env.WC_CONSUMER_SECRET_READ ??
+  process.env.WC_CONSUMER_SECRET ??
+  "";
+
+const CK_ORDERS =
+  process.env.WC_CONSUMER_KEY_ORDERS ??
+  CK_READ;
+const CS_ORDERS =
+  process.env.WC_CONSUMER_SECRET_ORDERS ??
+  CS_READ;
+
+type WooAuthMode = "read" | "orders";
 
 type WooFetchOptions = {
-  revalidate?: number;     // segundos
-  tags?: string[];         // para revalidateTag()
-  cache?: RequestCache;    // 'force-cache' | 'no-store' | ...
+  revalidate?: number; // segundos
+  tags?: string[]; // para revalidateTag()
+  cache?: RequestCache; // 'force-cache' | 'no-store' | ...
+  auth?: WooAuthMode; // ✅ qué credenciales usar (default: read)
+  method?: "GET" | "POST" | "PUT" | "DELETE"; // para futuro (orders)
 };
 
 type CategoryOptions = {
@@ -16,15 +40,25 @@ type CategoryOptions = {
   perPage?: number;
 };
 
-function assertEnv() {
+function assertEnv(auth: WooAuthMode = "read") {
   if (!WP_BASE) throw new Error("Missing env: WP_BASE_URL");
-  if (!CK) throw new Error("Missing env: WC_CONSUMER_KEY");
-  if (!CS) throw new Error("Missing env: WC_CONSUMER_SECRET");
+
+  if (auth === "orders") {
+    if (!CK_ORDERS) throw new Error("Missing env: WC_CONSUMER_KEY_ORDERS (or fallback)");
+    if (!CS_ORDERS) throw new Error("Missing env: WC_CONSUMER_SECRET_ORDERS (or fallback)");
+    return;
+  }
+
+  if (!CK_READ) throw new Error("Missing env: WC_CONSUMER_KEY_READ (or WC_CONSUMER_KEY)");
+  if (!CS_READ) throw new Error("Missing env: WC_CONSUMER_SECRET_READ (or WC_CONSUMER_SECRET)");
 }
 
-// Headers más “normales” para evitar challenge/bots.
+// Headers “normales” para evitar challenge/bots.
 // No cambia tu autenticación; solo la hace más compatible.
-function getAuthHeader() {
+function getAuthHeader(auth: WooAuthMode = "read") {
+  const CK = auth === "orders" ? CK_ORDERS : CK_READ;
+  const CS = auth === "orders" ? CS_ORDERS : CS_READ;
+
   return {
     Authorization: "Basic " + Buffer.from(`${CK}:${CS}`).toString("base64"),
     Accept: "application/json",
@@ -32,14 +66,35 @@ function getAuthHeader() {
   } as Record<string, string>;
 }
 
+function normalizeBaseUrl(u: string) {
+  return u.replace(/\/+$/, "");
+}
+
+function normalizePath(p: string) {
+  return p.replace(/^\/+/, "");
+}
+
+function looksLikeCloudflareHtml(body: string) {
+  const t = body.toLowerCase();
+  return (
+    body.includes("<!DOCTYPE html") ||
+    t.includes("just a moment") ||
+    t.includes("cloudflare") ||
+    t.includes("cf-ray")
+  );
+}
+
 async function wooFetch<T = any>(
   path: string,
   params: Record<string, string> = {},
   opts: WooFetchOptions = {}
 ): Promise<T> {
-  assertEnv();
+  const auth: WooAuthMode = opts.auth ?? "read";
+  assertEnv(auth);
 
-  const url = new URL(`${WP_BASE.replace(/\/+$/, "")}/wp-json/wc/v3/${path.replace(/^\/+/, "")}`);
+  const url = new URL(
+    `${normalizeBaseUrl(WP_BASE)}/wp-json/wc/v3/${normalizePath(path)}`
+  );
 
   Object.entries(params).forEach(([key, value]) => {
     url.searchParams.set(key, value);
@@ -47,49 +102,41 @@ async function wooFetch<T = any>(
 
   // Defaults: si pasás revalidate => usá force-cache, si no => no-store
   const hasRevalidate = typeof opts.revalidate === "number";
-  const cache: RequestCache = opts.cache ?? (hasRevalidate ? "force-cache" : "no-store");
+  const cache: RequestCache =
+    opts.cache ?? (hasRevalidate ? "force-cache" : "no-store");
+
+  const method = opts.method ?? "GET";
 
   const res = await fetch(url.toString(), {
-    method: "GET",
-    headers: getAuthHeader(),
+    method,
+    headers: getAuthHeader(auth),
     cache,
     ...(hasRevalidate || (opts.tags && opts.tags.length)
       ? { next: { revalidate: opts.revalidate, tags: opts.tags } }
       : {}),
   });
 
+  // ERROR PATH
   if (!res.ok) {
     const text = await res.text();
 
-    // Diagnóstico explícito: cuando Cloudflare devuelve HTML challenge.
-    const isHtmlChallenge =
-      text.includes("<!DOCTYPE html") ||
-      text.toLowerCase().includes("just a moment") ||
-      text.toLowerCase().includes("cloudflare");
-
-    if (isHtmlChallenge) {
+    if (looksLikeCloudflareHtml(text)) {
       throw new Error(
-        `Woo API blocked by Cloudflare (HTML challenge). Status ${res.status}. ` +
-        `URL: ${url.toString()}`
+        `Woo API blocked by Cloudflare (HTML challenge). Status ${res.status}. URL: ${url.toString()}`
       );
     }
 
     throw new Error(`Woo API error ${res.status}: ${text}`);
   }
 
-  // A veces Cloudflare manda 200 pero con HTML (menos común, pero pasa).
+  // SUCCESS BUT HTML (rare)
   const contentType = res.headers.get("content-type") || "";
   if (!contentType.toLowerCase().includes("application/json")) {
     const text = await res.text();
-    const isHtml =
-      text.includes("<!DOCTYPE html") ||
-      text.toLowerCase().includes("just a moment") ||
-      text.toLowerCase().includes("cloudflare");
 
-    if (isHtml) {
+    if (looksLikeCloudflareHtml(text)) {
       throw new Error(
-        `Woo API returned HTML (Cloudflare challenge). ` +
-        `URL: ${url.toString()}`
+        `Woo API returned HTML (Cloudflare challenge). URL: ${url.toString()}`
       );
     }
 
@@ -116,62 +163,90 @@ const REVALIDATE_PRODUCTS = 5 * 60; // 5 minutos
    =========================== */
 
 export async function getProducts(limit = 8) {
-  return wooFetch("products", {
-    per_page: String(limit),
-    status: "publish",
-  }, {
-    revalidate: REVALIDATE_PRODUCTS,
-    tags: ["woo:products"],
-  });
+  return wooFetch(
+    "products",
+    {
+      per_page: String(limit),
+      status: "publish",
+    },
+    {
+      revalidate: REVALIDATE_PRODUCTS,
+      tags: ["woo:products"],
+      auth: "read",
+    }
+  );
 }
 
 export async function getProductBySlug(slug: string) {
-  const products = await wooFetch<any[]>("products", {
-    slug,
-    status: "publish",
-  }, {
-    revalidate: REVALIDATE_PRODUCTS,
-    tags: ["woo:products", `woo:product:slug:${slug}`],
-  });
+  const products = await wooFetch<any[]>(
+    "products",
+    {
+      slug,
+      status: "publish",
+    },
+    {
+      revalidate: REVALIDATE_PRODUCTS,
+      tags: ["woo:products", `woo:product:slug:${slug}`],
+      auth: "read",
+    }
+  );
 
   return products?.[0] ?? null;
 }
 
 export async function getCategories() {
-  return wooFetch("products/categories", {
-    per_page: "100",
-    hide_empty: "true",
-  }, {
-    revalidate: REVALIDATE_CATEGORIES,
-    tags: ["woo:categories"],
-  });
+  return wooFetch(
+    "products/categories",
+    {
+      per_page: "100",
+      hide_empty: "true",
+    },
+    {
+      revalidate: REVALIDATE_CATEGORIES,
+      tags: ["woo:categories"],
+      auth: "read",
+    }
+  );
 }
 
 export async function getCategoryBySlug(slug: string) {
-  const cats = await wooFetch<any[]>("products/categories", {
-    slug,
-    per_page: "100",
-    hide_empty: "true",
-  }, {
-    revalidate: REVALIDATE_CATEGORIES,
-    tags: ["woo:categories", `woo:category:slug:${slug}`],
-  });
+  const cats = await wooFetch<any[]>(
+    "products/categories",
+    {
+      slug,
+      per_page: "100",
+      hide_empty: "true",
+    },
+    {
+      revalidate: REVALIDATE_CATEGORIES,
+      tags: ["woo:categories", `woo:category:slug:${slug}`],
+      auth: "read",
+    }
+  );
 
   return cats?.[0] ?? null;
 }
 
-export async function getCategoriesByParent(parentId: number, options: CategoryOptions = {}) {
+export async function getCategoriesByParent(
+  parentId: number,
+  options: CategoryOptions = {}
+) {
   const hideEmpty = options.hideEmpty ?? true;
   const perPage = options.perPage ?? 100;
 
-  return wooFetch("products/categories", {
-    parent: String(parentId),
-    per_page: String(perPage),
-    hide_empty: hideEmpty ? "true" : "false",
-  }, {
-    revalidate: REVALIDATE_CATEGORIES,
-    tags: ["woo:categories", `woo:category:parent:${parentId}`],
-  });
+  return wooFetch(
+    "products/categories",
+    {
+      parent: String(parentId),
+      per_page: String(perPage),
+      hide_empty: hideEmpty ? "true" : "false",
+    },
+    {
+      revalidate: REVALIDATE_CATEGORIES,
+      tags: ["woo:categories", `woo:category:parent:${parentId}`],
+      auth: "read",
+    }
+  );
 }
 
 /**
@@ -189,14 +264,19 @@ export async function getAllCategories(options: boolean | CategoryOptions = true
   const all: any[] = [];
 
   while (true) {
-    const chunk = await wooFetch<any[]>("products/categories", {
-      per_page: String(perPage),
-      page: String(page),
-      hide_empty: hideEmpty ? "true" : "false",
-    }, {
-      revalidate: REVALIDATE_CATEGORIES,
-      tags: ["woo:categories", "woo:categories:all"],
-    });
+    const chunk = await wooFetch<any[]>(
+      "products/categories",
+      {
+        per_page: String(perPage),
+        page: String(page),
+        hide_empty: hideEmpty ? "true" : "false",
+      },
+      {
+        revalidate: REVALIDATE_CATEGORIES,
+        tags: ["woo:categories", "woo:categories:all"],
+        auth: "read",
+      }
+    );
 
     if (!Array.isArray(chunk) || chunk.length === 0) break;
     all.push(...chunk);
@@ -236,14 +316,23 @@ export function buildCategoryTree(categories: any[]) {
    NUEVO: Productos por categoría
    =========================== */
 
-export async function getProductsByCategoryId(categoryId: number, perPage = 24, page = 1) {
-  return wooFetch("products", {
-    category: String(categoryId),
-    per_page: String(perPage),
-    page: String(page),
-    status: "publish",
-  }, {
-    revalidate: REVALIDATE_PRODUCTS,
-    tags: ["woo:products", `woo:products:category:${categoryId}`],
-  });
+export async function getProductsByCategoryId(
+  categoryId: number,
+  perPage = 24,
+  page = 1
+) {
+  return wooFetch(
+    "products",
+    {
+      category: String(categoryId),
+      per_page: String(perPage),
+      page: String(page),
+      status: "publish",
+    },
+    {
+      revalidate: REVALIDATE_PRODUCTS,
+      tags: ["woo:products", `woo:products:category:${categoryId}`],
+      auth: "read",
+    }
+  );
 }
