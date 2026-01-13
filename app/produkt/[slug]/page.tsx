@@ -40,7 +40,7 @@ export default async function ProductPage({
         <div className="mb-6 text-sm text-white/60">
           <span className="hover:text-white/80 cursor-pointer">Home</span>
           <span className="mx-2">/</span>
-          <span className="text-white/80">Product</span>
+          <span className="text-white/80">Produkt</span>
         </div>
 
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
