@@ -90,7 +90,7 @@ const MATERIALS: Material[] = [
     id: "flizelina-170g",
     name: "Flizelinowa Gładka 170g",
     desc: "WSTAW TU OPIS 1 (dokładnie jak w Twoich materiałach).",
-    image: "/materials/flizelina-170.jpg", // cambia si querés
+    image: "https://drukdekoracje.pl/wp-content/uploads/2024/12/1-lateksowa-600x400-1.webp", // cambia si querés
   },
   {
     id: "flizelina-premium-220g",
