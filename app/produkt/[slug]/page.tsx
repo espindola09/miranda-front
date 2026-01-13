@@ -1,6 +1,16 @@
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
-import { PL } from "@/lib/i18n/pl";
+import FototapetyConfigurator from "./FototapetyConfigurator";
+import ProductImageViewer from "@/components/ProductImageViewer";
+
+function isFototapetyProduct(product: any) {
+  const cats = Array.isArray(product?.categories) ? product.categories : [];
+  return cats.some((c: any) => {
+    const slug = String(c?.slug || "").toLowerCase();
+    const name = String(c?.name || "").toLowerCase();
+    return slug === "fototapety" || name === "fototapety";
+  });
+}
 
 export default async function ProductPage({
   params,
@@ -12,12 +22,21 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const imageUrl = product.images?.[0]?.src || "";
-
-  // Precio: preferimos price_html si existe (mejor formato), sino fallback
   const priceHtml = (product as any)?.price_html as string | undefined;
 
-  const isInStock = product.stock_status === "instock";
+  const isFototapety = isFototapetyProduct(product);
+
+  // Máximos desde dimensiones (solo Fototapety los tiene cargados)
+  const maxWidthCm = Number((product as any)?.dimensions?.width || 0);
+  const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
+
+  // Normalizamos imágenes para el viewer
+  const images =
+    (product.images || []).map((img: any) => ({
+      id: img.id,
+      src: img.src,
+      alt: img.alt,
+    })) ?? [];
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -30,38 +49,20 @@ export default async function ProductPage({
         </div>
 
         <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-          {/* GALERÍA / IMAGEN */}
+          {/* GALERÍA / IMAGEN + CONTROLES */}
           <section className="self-start">
-            <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
-              {imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={product.name}
-                  className="w-full h-auto block object-cover"
-                  loading="eager"
-                />
-              ) : (
-                <div className="p-14 text-white/50">No image</div>
-              )}
-            </div>
+            <ProductImageViewer images={images} productName={product.name} />
 
-            {/* Thumbs placeholder (si luego querés galería real) */}
-            {product.images?.length > 1 ? (
-              <div className="mt-4 grid grid-cols-5 gap-3">
-                {product.images.slice(0, 5).map((img: any, idx: number) => (
-                  <div
-                    key={img.id ?? `${img.src}-${idx}`}
-                    className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
-                    title={img.alt || product.name}
-                  >
-                    <img
-                      src={img.src}
-                      alt={img.alt || product.name}
-                      className="w-full h-16 block object-cover"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
+            {/* ✅ Fototapety configurator (inputs + Powierzchnia/Wymiary/Bryty) */}
+            {isFototapety ? (
+              <div className="mt-5">
+                <FototapetyConfigurator
+                  maxWidthCm={Number.isFinite(maxWidthCm) ? maxWidthCm : 0}
+                  maxHeightCm={Number.isFinite(maxHeightCm) ? maxHeightCm : 0}
+                  defaultWidthCm={70}
+                  defaultHeightCm={100}
+                  maxPanelWidthCm={100}
+                />
               </div>
             ) : null}
           </section>
@@ -90,19 +91,22 @@ export default async function ProductPage({
             <div className="mt-5 flex flex-wrap gap-2 text-xs">
               {product.sku ? (
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                  {PL.sku}: {product.sku}
+                  SKU: {product.sku}
                 </span>
               ) : null}
 
               {product.stock_status ? (
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                  {PL.stock}: {isInStock ? PL.inStock : PL.outOfStock}
+                  Stan:{" "}
+                  {product.stock_status === "instock"
+                    ? "Dostępny"
+                    : product.stock_status}
                 </span>
               ) : null}
 
               {product.categories?.[0]?.name ? (
                 <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                  {PL.category}: {product.categories[0].name}
+                  Kategoria: {product.categories[0].name}
                 </span>
               ) : null}
             </div>
@@ -117,19 +121,19 @@ export default async function ProductPage({
               </div>
             ) : null}
 
-            {/* CTA placeholder (luego se conecta con Add to Cart headless) */}
+            {/* CTA placeholder */}
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
               >
-                {PL.addToCart}
+                Dodaj do koszyka
               </button>
               <button
                 type="button"
                 className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
               >
-                {PL.addToWishlist}
+                Dodaj do ulubionych
               </button>
             </div>
 
@@ -137,7 +141,7 @@ export default async function ProductPage({
             {product.description ? (
               <div className="mt-8">
                 <h2 className="text-lg font-semibold text-white/90 mb-3">
-                  {PL.description}
+                  Opis
                 </h2>
                 <div
                   className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
