@@ -29,28 +29,11 @@ export default async function ProductPage({
 
   // Imágenes
   const images = Array.isArray(product.images) ? product.images : [];
+  const mainImageUrl = images?.[0]?.src || "";
 
-  // Precio numérico (✅ confiable)
-  const onSale = Boolean((product as any)?.on_sale);
-  const regularPrice = String((product as any)?.regular_price || "");
-  const salePrice = String((product as any)?.sale_price || "");
-  const currentPrice = String((product as any)?.price || "");
-  const currency = "zł"; // si luego lo querés dinámico, lo hacemos con settings endpoint
-
-  // Meta
-  const sku = (product as any)?.sku ?? null;
-  const stockStatus = (product as any)?.stock_status ?? null;
-  const categoryName =
-    (product as any)?.categories?.[0]?.name ? String((product as any).categories[0].name) : null;
-
-  // Descripciones
-  const shortDescriptionHtml = (product as any)?.short_description as string | undefined;
-  const descriptionHtml = (product as any)?.description as string | undefined;
-
-  if (!isFototapety) {
-    // Por ahora solo Fototapety (luego sumamos las otras 4 familias)
-    // Si querés, acá ponemos un fallback layout.
-  }
+  // Precio HTML (Woo) + fallback
+  const priceHtml = (product as any)?.price_html as string | undefined;
+  const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -71,20 +54,107 @@ export default async function ProductPage({
             defaultWidthCm={70}
             defaultHeightCm={100}
             maxPanelWidthCm={100}
-            shortDescriptionHtml={shortDescriptionHtml}
-            descriptionHtml={descriptionHtml}
-            sku={sku}
-            stockStatus={stockStatus}
-            categoryName={categoryName}
-            onSale={onSale}
-            regularPrice={regularPrice}
-            salePrice={salePrice}
-            currentPrice={currentPrice}
-            currency={currency}
+            priceHtml={priceHtml}
+            fallbackPrice={fallbackPrice}
+            shortDescriptionHtml={product.short_description || ""}
+            descriptionHtml={product.description || ""}
+            sku={product.sku || ""}
+            stockStatus={product.stock_status || ""}
+            categoryName={product.categories?.[0]?.name || ""}
           />
         ) : (
-          <div className="text-white/70">
-            Este producto no es Fototapety (luego armamos el layout para su familia).
+          <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
+            {/* IZQUIERDA */}
+            <section className="self-start">
+              <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
+                {mainImageUrl ? (
+                  <img
+                    src={mainImageUrl}
+                    alt={product.name}
+                    className="w-full h-auto block object-cover"
+                    loading="eager"
+                  />
+                ) : (
+                  <div className="p-14 text-white/50">No image</div>
+                )}
+              </div>
+
+              {/* Thumbs placeholder */}
+              {images.length > 1 ? (
+                <div className="mt-4 grid grid-cols-5 gap-3">
+                  {images.slice(0, 5).map((img: any, idx: number) => (
+                    <div
+                      key={img.id ?? `${img.src}-${idx}`}
+                      className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
+                      title={img.alt || product.name}
+                    >
+                      <img
+                        src={img.src}
+                        alt={img.alt || product.name}
+                        className="w-full h-16 block object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            {/* DERECHA */}
+            <section className="min-w-0">
+              <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+                {product.name}
+              </h1>
+
+              <div className="mt-3">
+                {priceHtml ? (
+                  <div
+                    className="text-xl md:text-2xl font-semibold text-white/90"
+                    dangerouslySetInnerHTML={{ __html: priceHtml }}
+                  />
+                ) : (
+                  <p className="text-xl md:text-2xl font-semibold text-white/90">
+                    {fallbackPrice}
+                  </p>
+                )}
+              </div>
+
+              {product.short_description ? (
+                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+                  <div
+                    className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+                    dangerouslySetInnerHTML={{ __html: product.short_description }}
+                  />
+                </div>
+              ) : null}
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                <button
+                  type="button"
+                  className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
+                >
+                  Dodaj do koszyka
+                </button>
+                <button
+                  type="button"
+                  className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
+                >
+                  Dodaj do ulubionych
+                </button>
+              </div>
+
+              {product.description ? (
+                <div className="mt-8">
+                  <h2 className="text-lg font-semibold text-white/90 mb-3">
+                    Opis
+                  </h2>
+                  <div
+                    className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+                    dangerouslySetInnerHTML={{ __html: product.description }}
+                  />
+                </div>
+              ) : null}
+            </section>
           </div>
         )}
       </div>
