@@ -239,7 +239,7 @@ function RelatedProductsSection({ products }: { products: any[] }) {
   return (
     <section className="mt-12 border-t border-white/10 pt-8">
       <h2 className="text-lg md:text-xl font-semibold text-white/90 mb-5">
-        Produkty powiązane
+        Polecane produkty
       </h2>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
