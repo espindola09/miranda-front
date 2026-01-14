@@ -285,10 +285,7 @@ export default function FototapetyProductClient({
     return stockStatus === "instock" ? "Dostępny" : stockStatus || "";
   }, [stockStatus]);
 
-  const cleanPriceHtml = useMemo(
-    () => buildCleanPriceHtml(priceHtml),
-    [priceHtml]
-  );
+  const cleanPriceHtml = useMemo(() => buildCleanPriceHtml(priceHtml), [priceHtml]);
 
   const [materialOpen, setMaterialOpen] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>(
@@ -315,9 +312,7 @@ export default function FototapetyProductClient({
       : `/produkt/probka-fototapety`;
   }, [sku]);
 
-  const categoriesText = useMemo(() => joinCategories(categoryNames), [
-    categoryNames,
-  ]);
+  const categoriesText = useMemo(() => joinCategories(categoryNames), [categoryNames]);
 
   // ✅ Tabs: Opis / Informacje dodatkowe
   const [tab, setTab] = useState<"opis" | "info">("opis");
@@ -412,8 +407,8 @@ export default function FototapetyProductClient({
         ) : null}
 
         <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
-          <span className="font-semibold">Powierzchnia:</span>{" "}
-          {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
+          <span className="font-semibold">Powierzchnia:</span> {areaM2.toFixed(2)} m²{" "}
+          <span className="text-white/40">|</span>{" "}
           <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
           <span className="text-white/40">|</span>{" "}
           <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
@@ -423,30 +418,30 @@ export default function FototapetyProductClient({
 
       {/* DERECHA */}
       <section className="min-w-0">
-        <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-          {productName}
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold leading-tight">{productName}</h1>
 
-        {/* Chips arriba (los dejamos, si querés luego los quitamos) */}
-        <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          {sku ? (
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-              SKU: {sku}
-            </span>
-          ) : null}
+        {/* Chips debajo del título (DESACTIVADOS). Metadatos solo debajo del CTA. */}
+        {false && (
+          <div className="mt-4 flex flex-wrap gap-2 text-xs">
+            {sku ? (
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
+                SKU: {sku}
+              </span>
+            ) : null}
 
-          {stockStatus ? (
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-              Stan: {stockLabel}
-            </span>
-          ) : null}
+            {stockStatus ? (
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
+                Stan: {stockLabel}
+              </span>
+            ) : null}
 
-          {categoryName ? (
-            <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-              Kategoria: {categoryName}
-            </span>
-          ) : null}
-        </div>
+            {categoryName ? (
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
+                Kategoria: {categoryName}
+              </span>
+            ) : null}
+          </div>
+        )}
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -461,9 +456,7 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultWidthCm)}
             />
-            <div className="mt-2 text-xs text-white/60">
-              Max: {maxW > 0 ? `${maxW} cm` : "—"}
-            </div>
+            <div className="mt-2 text-xs text-white/60">Max: {maxW > 0 ? `${maxW} cm` : "—"}</div>
           </div>
 
           <div>
@@ -478,9 +471,7 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultHeightCm)}
             />
-            <div className="mt-2 text-xs text-white/60">
-              Max: {maxH > 0 ? `${maxH} cm` : "—"}
-            </div>
+            <div className="mt-2 text-xs text-white/60">Max: {maxH > 0 ? `${maxH} cm` : "—"}</div>
           </div>
         </div>
 
@@ -493,10 +484,7 @@ export default function FototapetyProductClient({
             onClick={() => setMaterialOpen(true)}
             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-left hover:border-white/20 transition flex items-center justify-between gap-3"
           >
-            <span className="text-white/90">
-              {selectedMaterial?.name || "Wybierz materiał"}
-            </span>
-
+            <span className="text-white/90">{selectedMaterial?.name || "Wybierz materiał"}</span>
             <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
@@ -581,9 +569,7 @@ export default function FototapetyProductClient({
               dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
             />
           ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">
-              {fallbackPrice || ""}
-            </p>
+            <p className="text-lg md:text-xl font-semibold text-white/90">{fallbackPrice || ""}</p>
           )}
         </div>
 
@@ -608,8 +594,7 @@ export default function FototapetyProductClient({
           <div className="mt-4 text-sm text-white/80 space-y-1">
             {String(sku || "").trim() ? (
               <div>
-                <span className="font-semibold">SKU:</span>{" "}
-                {String(sku || "").trim()}
+                <span className="font-semibold">SKU:</span> {String(sku || "").trim()}
               </div>
             ) : null}
 
@@ -625,10 +610,7 @@ export default function FototapetyProductClient({
         {/* LINK A PRÓBKA */}
         <div className="mt-3 text-xs text-white/60">
           Możesz uzyskać naszą próbkę fototapety pod tym linkiem:{" "}
-          <Link
-            href={sampleHref}
-            className="text-[#c9b086] hover:underline font-semibold"
-          >
+          <Link href={sampleHref} className="text-[#c9b086] hover:underline font-semibold">
             Próbka Fototapety 29.00zł
           </Link>
         </div>
@@ -684,18 +666,14 @@ export default function FototapetyProductClient({
                           <td className="w-48 align-top bg-white/5 px-4 py-4 text-white/90 font-semibold">
                             {row.label}
                           </td>
-                          <td className="px-4 py-4 text-white/70">
-                            {row.value}
-                          </td>
+                          <td className="px-4 py-4 text-white/70">{row.value}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <div className="text-white/60 text-sm">
-                  Brak danych dodatkowych.
-                </div>
+                <div className="text-white/60 text-sm">Brak danych dodatkowych.</div>
               )}
             </div>
           )}
@@ -714,9 +692,7 @@ export default function FototapetyProductClient({
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <div>
-                <h3 className="text-lg font-semibold text-white/90">
-                  Wybierz materiał
-                </h3>
+                <h3 className="text-lg font-semibold text-white/90">Wybierz materiał</h3>
                 <p className="text-sm text-white/60">
                   Kliknij materiał, aby wybrać i zobaczyć opis.
                 </p>
@@ -760,9 +736,7 @@ export default function FototapetyProductClient({
                         </div>
 
                         <div className="min-w-0">
-                          <div className="font-semibold text-white/90 truncate">
-                            {m.name}
-                          </div>
+                          <div className="font-semibold text-white/90 truncate">{m.name}</div>
                           <div className="text-xs text-white/60 truncate">
                             Kliknij, aby zobaczyć opis
                           </div>
@@ -786,9 +760,7 @@ export default function FototapetyProductClient({
                     ) : null}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-base font-semibold text-white/90">
-                      {selectedMaterial?.name}
-                    </div>
+                    <div className="text-base font-semibold text-white/90">{selectedMaterial?.name}</div>
                     <div className="text-sm text-white/60">
                       Klej do tapet • maksymalna szerokość brytu 100 cm
                     </div>
