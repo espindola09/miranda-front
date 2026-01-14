@@ -20,7 +20,9 @@ type Props = {
   // ✅ Meta opcional (para que coincida con lo que pasás desde page.tsx)
   sku?: string | null;
   stockStatus?: string | null;
-  categoryName?: string | null;
+
+  // ✅ Para mostrar TODAS las categorías del producto actual (Próbka)
+  categoryNames?: string[] | null;
 };
 
 function buildCleanPriceHtml(raw?: string) {
@@ -52,6 +54,20 @@ function buildCleanPriceHtml(raw?: string) {
   return "";
 }
 
+function normalizeString(v: unknown): string {
+  return String(v ?? "").trim();
+}
+
+function joinCategories(categoryNames?: string[] | null) {
+  if (!Array.isArray(categoryNames) || categoryNames.length === 0) return "";
+  const cleaned = categoryNames
+    .map((s) => normalizeString(s))
+    .filter(Boolean);
+
+  if (cleaned.length === 0) return "";
+  return Array.from(new Set(cleaned)).join(", ");
+}
+
 export default function FototapetySampleClient({
   productName,
   images,
@@ -62,10 +78,10 @@ export default function FototapetySampleClient({
   descriptionHtml,
   sku,
   stockStatus,
-  categoryName,
+  categoryNames,
 }: Props) {
-  const [activeIdx] = useState(0);
-  const active = images?.[activeIdx]?.src || "";
+  // Imagen activa (por ahora fija a la primera como en tu versión)
+  const active = images?.[0]?.src || "";
 
   // Material (por ahora simple; si querés tu popup lo conectamos después)
   const [material, setMaterial] = useState("Flizelinowa Gładka 170g");
@@ -77,13 +93,26 @@ export default function FototapetySampleClient({
   // Campo “Numer Produktu” prellenado con refSku
   const [productNumber, setProductNumber] = useState(refSku || "");
 
+  // Precio limpio
   const cleanPriceHtml = useMemo(
     () => buildCleanPriceHtml(priceHtml),
     [priceHtml]
   );
 
-  const stockLabel =
-    stockStatus === "instock" ? "Dostępny" : stockStatus || "";
+  // ✅ Categorías completas (como en el sitio actual)
+  const categoriesText = useMemo(
+    () => joinCategories(categoryNames),
+    [categoryNames]
+  );
+
+  const skuText = useMemo(() => normalizeString(sku), [sku]);
+
+  // Nota: lo dejo calculado aunque no lo muestres ahora (por si luego querés “Stan”)
+  const stockLabel = useMemo(() => {
+    const s = normalizeString(stockStatus);
+    if (!s) return "";
+    return s === "instock" ? "Dostępny" : s;
+  }, [stockStatus]);
 
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -109,24 +138,18 @@ export default function FototapetySampleClient({
           {productName}
         </h1>
 
-        {/* ✅ Meta chips opcionales */}
-        {(sku || stockStatus || categoryName) ? (
+        {/* ✅ Chips SOLO como en tu screenshot (SKU + Kategoria), sin Stan */}
+        {(skuText || categoriesText) ? (
           <div className="mt-3 flex flex-wrap gap-2 text-xs">
-            {sku ? (
+            {skuText ? (
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                SKU: {sku}
+                SKU: {skuText}
               </span>
             ) : null}
 
-            {stockStatus ? (
+            {categoriesText ? (
               <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                Stan: {stockLabel}
-              </span>
-            ) : null}
-
-            {categoryName ? (
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                Kategoria: {categoryName}
+                Kategoria: {categoriesText}
               </span>
             ) : null}
           </div>
@@ -163,7 +186,7 @@ export default function FototapetySampleClient({
           </select>
         </div>
 
-        {/* Szerokość / Wysokość (como screenshot con selects) */}
+        {/* Szerokość / Wysokość */}
         <div className="mt-5 space-y-4">
           <div>
             <label className="block text-sm text-white/80 mb-2">
@@ -202,14 +225,14 @@ export default function FototapetySampleClient({
           </div>
         </div>
 
-        {/* SKU mostrado como en el sitio actual (refSku del producto original) */}
-        {refSku ? (
+        {/* SKU del producto original (refSku) — como en el sitio actual */}
+        {normalizeString(refSku) ? (
           <div className="mt-4 text-sm text-white/80">
-            <span className="font-semibold">SKU:</span> {refSku}
+            <span className="font-semibold">SKU:</span> {normalizeString(refSku)}
           </div>
         ) : null}
 
-        {/* Numer Produktu (prellenado) */}
+        {/* Numer Produktu */}
         <div className="mt-6">
           <label className="block text-sm text-white/80 mb-2">
             Numer Produktu: <span className="text-red-400">*</span>

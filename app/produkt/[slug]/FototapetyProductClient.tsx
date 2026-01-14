@@ -26,6 +26,9 @@ type Props = {
   sku?: string | null;
   stockStatus?: string | null;
   categoryName?: string | null;
+
+  // ✅ NUEVO (para mostrar TODAS las categorías debajo del CTA como en Woo)
+  categoryNames?: string[] | null;
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -169,6 +172,14 @@ function InfoIcon() {
   );
 }
 
+function joinCategories(categoryNames?: string[] | null) {
+  if (!Array.isArray(categoryNames)) return "";
+  const cleaned = categoryNames
+    .map((s) => String(s || "").trim())
+    .filter(Boolean);
+  return cleaned.length ? Array.from(new Set(cleaned)).join(", ") : "";
+}
+
 export default function FototapetyProductClient({
   productName,
   images,
@@ -184,6 +195,7 @@ export default function FototapetyProductClient({
   sku,
   stockStatus,
   categoryName,
+  categoryNames,
 }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const active = images?.[activeIdx]?.src || "";
@@ -201,8 +213,15 @@ export default function FototapetyProductClient({
   const [w, setW] = useState<number>(defaultWidthCm);
   const [h, setH] = useState<number>(defaultHeightCm);
 
-  const maxW = Number.isFinite(maxWidthCm) && maxWidthCm > 0 ? maxWidthCm : 0;
-  const maxH = Number.isFinite(maxHeightCm) && maxHeightCm > 0 ? maxHeightCm : 0;
+  const maxW = useMemo(() => {
+    const n = Number(maxWidthCm);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }, [maxWidthCm]);
+
+  const maxH = useMemo(() => {
+    const n = Number(maxHeightCm);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }, [maxHeightCm]);
 
   const wClamped = useMemo(() => {
     const upper = maxW > 0 ? maxW : 9999;
@@ -220,7 +239,11 @@ export default function FototapetyProductClient({
   );
 
   const panels = useMemo(() => {
-    const panelCount = Math.max(1, Math.ceil(wClamped / maxPanelWidthCm));
+    const safeMaxPanel = Number.isFinite(maxPanelWidthCm) && maxPanelWidthCm > 0
+      ? maxPanelWidthCm
+      : 100;
+
+    const panelCount = Math.max(1, Math.ceil(wClamped / safeMaxPanel));
     const panelWidth = Math.round(wClamped / panelCount);
     return { panelCount, panelWidth };
   }, [wClamped, maxPanelWidthCm]);
@@ -244,12 +267,13 @@ export default function FototapetyProductClient({
     });
   };
 
-  const transform = `scale(${zoom}) scaleX(${flipX ? -1 : 1}) scaleY(${
-    flipY ? -1 : 1
-  })`;
+  const transform = useMemo(() => {
+    return `scale(${zoom}) scaleX(${flipX ? -1 : 1}) scaleY(${flipY ? -1 : 1})`;
+  }, [zoom, flipX, flipY]);
 
-  const stockLabel =
-    stockStatus === "instock" ? "Dostępny" : stockStatus || "";
+  const stockLabel = useMemo(() => {
+    return stockStatus === "instock" ? "Dostępny" : stockStatus || "";
+  }, [stockStatus]);
 
   const cleanPriceHtml = useMemo(
     () => buildCleanPriceHtml(priceHtml),
@@ -275,10 +299,17 @@ export default function FototapetyProductClient({
   }, [materialOpen]);
 
   // ✅ Link a la próba con el SKU actual (si existe)
-  const sampleHref =
-    sku && sku.trim().length > 0
-      ? `/produkt/probka-fototapety?ref_sku=${encodeURIComponent(sku)}`
+  const sampleHref = useMemo(() => {
+    const s = String(sku || "").trim();
+    return s.length > 0
+      ? `/produkt/probka-fototapety?ref_sku=${encodeURIComponent(s)}`
       : `/produkt/probka-fototapety`;
+  }, [sku]);
+
+  // ✅ Categorías completas (para bloque debajo CTA, como Woo)
+  const categoriesText = useMemo(() => joinCategories(categoryNames), [
+    categoryNames,
+  ]);
 
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -487,7 +518,9 @@ export default function FototapetyProductClient({
           </div>
 
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
+            <label className="block text-sm text-white/80 mb-2">
+              Druk Premium
+            </label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -503,7 +536,9 @@ export default function FototapetyProductClient({
           </div>
 
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
+            <label className="block text-sm text-white/80 mb-2">
+              Klej do tapet
+            </label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -559,6 +594,25 @@ export default function FototapetyProductClient({
           </button>
         </div>
 
+        {/* ✅ SKU + categorías completas debajo del CTA (como Woo) */}
+        {(String(sku || "").trim() || categoriesText) ? (
+          <div className="mt-4 text-sm text-white/80 space-y-1">
+            {String(sku || "").trim() ? (
+              <div>
+                <span className="font-semibold">SKU:</span>{" "}
+                {String(sku || "").trim()}
+              </div>
+            ) : null}
+
+            {categoriesText ? (
+              <div>
+                <span className="font-semibold">Kategorie:</span>{" "}
+                <span className="text-white/70">{categoriesText}</span>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {/* ✅ LINK A PRÓBKA (como el sitio actual) */}
         <div className="mt-3 text-xs text-white/60">
           Możesz uzyskać naszą próbkę fototapety pod tym linkiem:{" "}
@@ -581,7 +635,7 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* POPUP MATERIAL (igual al tuyo; omitido acá para no duplicar) */}
+        {/* POPUP MATERIAL */}
         {materialOpen ? (
           <div
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
@@ -613,7 +667,7 @@ export default function FototapetyProductClient({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
                 <div className="space-y-2">
                   {MATERIALS.map((m) => {
-                    const active = m.id === selectedMaterialId;
+                    const isActive = m.id === selectedMaterialId;
                     return (
                       <button
                         key={m.id}
@@ -621,7 +675,7 @@ export default function FototapetyProductClient({
                         onClick={() => setSelectedMaterialId(m.id)}
                         className={[
                           "w-full text-left rounded-xl border px-4 py-3 transition",
-                          active
+                          isActive
                             ? "border-[#c9b086] bg-white/10"
                             : "border-white/10 bg-white/5 hover:border-white/20",
                         ].join(" ")}

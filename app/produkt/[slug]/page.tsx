@@ -18,6 +18,15 @@ function pickFirstString(v: string | string[] | undefined): string {
   return "";
 }
 
+function uniqueCategoryNames(product: any): string[] {
+  const cats = Array.isArray(product?.categories) ? product.categories : [];
+  const names = cats
+    .map((c: any) => String(c?.name || "").trim())
+    .filter(Boolean);
+
+  return Array.from(new Set(names));
+}
+
 export default async function ProductPage({
   params,
   searchParams,
@@ -42,6 +51,11 @@ export default async function ProductPage({
   const priceHtml = (product as any)?.price_html as string | undefined;
   const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
+  // Meta (para todos los layouts)
+  const skuText = String(product?.sku || "");
+  const categoryNames = uniqueCategoryNames(product);
+  const categoriesText = categoryNames.join(", ");
+
   // ✅ Caso especial: producto de prueba (replicar comportamiento del sitio actual)
   // Nota: este slug debe coincidir con el slug real en Woo.
   if (slug === "probka-fototapety") {
@@ -63,9 +77,9 @@ export default async function ProductPage({
             refSku={refSku}
             shortDescriptionHtml={product.short_description || ""}
             descriptionHtml={product.description || ""}
-            sku={product.sku || ""}
+            sku={skuText}
             stockStatus={product.stock_status || ""}
-            categoryName={product.categories?.[0]?.name || ""}
+            categoryNames={categoryNames}
           />
         </div>
       </main>
@@ -101,9 +115,10 @@ export default async function ProductPage({
             fallbackPrice={fallbackPrice}
             shortDescriptionHtml={product.short_description || ""}
             descriptionHtml={product.description || ""}
-            sku={product.sku || ""}
+            sku={skuText}
             stockStatus={product.stock_status || ""}
             categoryName={product.categories?.[0]?.name || ""}
+            categoryNames={categoryNames}
           />
         ) : (
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -187,6 +202,24 @@ export default async function ProductPage({
                   Dodaj do ulubionych
                 </button>
               </div>
+
+              {/* ✅ META debajo del CTA (para todos los productos) */}
+              {(skuText || categoryNames.length > 0) ? (
+                <div className="mt-4 text-sm text-white/80 space-y-1">
+                  {skuText ? (
+                    <div>
+                      <span className="font-semibold">SKU:</span> {skuText}
+                    </div>
+                  ) : null}
+
+                  {categoryNames.length > 0 ? (
+                    <div>
+                      <span className="font-semibold">Kategorie:</span>{" "}
+                      <span className="text-white/70">{categoriesText}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               {product.description ? (
                 <div className="mt-8">
