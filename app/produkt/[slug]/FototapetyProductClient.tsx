@@ -321,7 +321,17 @@ export default function FototapetyProductClient({
 
   // ✅ Tabs: Opis / Informacje dodatkowe
   const [tab, setTab] = useState<"opis" | "info">("opis");
-  const additionalRows = Array.isArray(additionalInfo) ? additionalInfo : [];
+
+  // ✅ Rows robustas (permitimos label vacío para la nota)
+  const additionalRows = useMemo(() => {
+    const base = Array.isArray(additionalInfo) ? additionalInfo : [];
+    return base
+      .map((r) => ({
+        label: String(r?.label ?? "").trim(),
+        value: String(r?.value ?? "").trim(),
+      }))
+      .filter((r) => r.label || r.value);
+  }, [additionalInfo]);
 
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -682,9 +692,9 @@ export default function FototapetyProductClient({
                           className="border-t border-white/10 first:border-t-0"
                         >
                           <td className="w-48 align-top bg-white/5 px-4 py-4 text-white/90 font-semibold">
-                            {row.label}
+                            {row.label ? row.label : "\u00A0"}
                           </td>
-                          <td className="px-4 py-4 text-white/70">
+                          <td className="px-4 py-4 text-white/70 whitespace-pre-line leading-relaxed">
                             {row.value}
                           </td>
                         </tr>
