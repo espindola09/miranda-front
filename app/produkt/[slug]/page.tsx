@@ -1,16 +1,12 @@
-// ✅ IMPORTANT: force Node runtime on Vercel (fixes related products not showing in production)
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
-import FototapetyProductClient, {
-  type AdditionalInfoRow,
-} from "./FototapetyProductClient";
+import FototapetyProductClient, { type AdditionalInfoRow } from "./FototapetyProductClient";
 import FototapetySampleClient from "./FototapetySampleClient";
 import Link from "next/link";
 
-/* -------------------- helpers -------------------- */
+/* ----------------------------- helpers ----------------------------- */
 
 function isFototapetyProduct(product: any) {
   const cats = Array.isArray(product?.categories) ? product.categories : [];
@@ -29,19 +25,11 @@ function pickFirstString(v: string | string[] | undefined): string {
 
 function uniqueCategoryNames(product: any): string[] {
   const cats = Array.isArray(product?.categories) ? product.categories : [];
-  const names = cats
-    .map((c: any) => String(c?.name || "").trim())
-    .filter(Boolean);
+  const names = cats.map((c: any) => String(c?.name || "").trim()).filter(Boolean);
   return Array.from(new Set(names));
 }
 
-function normalizeBaseUrl(v: unknown) {
-  const s = String(v || "").trim();
-  return s ? s.replace(/\/+$/, "") : "";
-}
-
-/* -------------------- fixed legends -------------------- */
-
+// ✅ Leyendas fijas pedidas (incrustadas en el código)
 const FIXED_MATERIALS_TEXT =
   "dostępne materiały: Flizelinowa Gładka 170g, Flizelinowa Gładka PREMIUM 220g, Winyl na flizelinie beton, Winylowa na flizelinie strukturalna 360g, Samoprzylepna, Winylowa na flizelinie strukturalna BRUSH 360g";
 
@@ -49,11 +37,10 @@ const FIXED_PANELS_NOTE_TEXT =
   "Ilość brytów jest orientacyjna. Jeśli potrzebujesz konkretnej szerokości, podaj to w uwagach. Inaczej fototapeta może być podzielona inaczej.\nPamiętaj! Jest to produkt indywidualny i warto dodać do potrzebnego wymiaru 3cm zapasu.";
 
 /**
- * Construye filas para "Informacje dodatkowe" de forma robusta.
+ * Construye filas para "Informacje dodatkowe" (SOLO Fototapety).
  * - Prioridad: product.attributes (aunque visible venga false).
  * - Fallback: dimensiones (si existen).
  * - Inserta leyendas fijas debajo de “Wymiary maksymalne”.
- * IMPORTANTE: Esta tabla solo la mostramos en Fototapety.
  */
 function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
   const rows: AdditionalInfoRow[] = [];
@@ -67,6 +54,7 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
       .map((x: any) => String(x || "").trim())
       .filter(Boolean)
       .join(", ");
+
     if (label && value) rows.push({ label, value });
   }
 
@@ -130,15 +118,37 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
   return unique;
 }
 
-/* -------------------- related products -------------------- */
+/**
+ * Base64 compatible (Node/Edge).
+ * En Node: Buffer.
+ * En Edge: btoa (si existiera) o fallback seguro.
+ */
+function toBase64(input: string): string {
+  // Node
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const B: any = (globalThis as any)?.Buffer;
+  if (B?.from) return B.from(input, "utf-8").toString("base64");
+
+  // Edge / browser-like
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const btoaFn: any = (globalThis as any)?.btoa;
+  if (typeof btoaFn === "function") {
+    // btoa no soporta unicode directo; convertimos a latin1-safe
+    const bytes = new TextEncoder().encode(input);
+    let bin = "";
+    bytes.forEach((b) => (bin += String.fromCharCode(b)));
+    return btoaFn(bin);
+  }
+
+  // Último recurso (muy raro llegar acá)
+  return "";
+}
 
 /**
  * ✅ Related products (server-side)
  * - Primero intenta product.related_ids (Woo).
- * - Si no hay o falla, fallback por categoría.
- * - Usa WC REST v3 con Basic Auth vía env vars.
- *
- * Nota: En Vercel, forzamos Node runtime arriba para que Buffer exista siempre.
+ * - Si no hay, fallback por categoría.
+ * - WC REST v3 con Basic Auth vía env vars.
  */
 async function fetchRelatedProducts(product: any) {
   try {
@@ -148,16 +158,18 @@ async function fetchRelatedProducts(product: any) {
       process.env.NEXT_PUBLIC_WORDPRESS_URL;
 
     const ck =
-      process.env.WC_CONSUMER_KEY || process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
+      process.env.WC_CONSUMER_KEY ||
+      process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
 
     const cs =
       process.env.WC_CONSUMER_SECRET ||
       process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET;
 
-    const base = normalizeBaseUrl(baseRaw);
-    if (!base || !ck || !cs) return [];
+    if (!baseRaw || !ck || !cs) return [];
 
-    const auth = Buffer.from(`${ck}:${cs}`).toString("base64");
+    const base = String(baseRaw).replace(/\/+$/, "");
+    const auth = toBase64(`${ck}:${cs}`);
+    if (!auth) return [];
 
     const currentId = Number(product?.id || 0);
 
@@ -170,11 +182,11 @@ async function fetchRelatedProducts(product: any) {
       .filter((n: number) => Number.isFinite(n) && n > 0 && n !== currentId)
       .slice(0, 8);
 
-    const commonFetchInit: RequestInit = {
-      headers: { Authorization: `Basic ${auth}` },
-      cache: "no-store",
-      // ayuda a evitar comportamientos raros de caching en prod
-      next: { revalidate: 0 } as any,
+    const commonHeaders = {
+      Authorization: `Basic ${auth}`,
+      // algunos WAFs/CDNs se ponen “quisquillosos” sin UA
+      "User-Agent": "Vercel-NextJS",
+      Accept: "application/json",
     };
 
     // 1) related_ids
@@ -184,7 +196,11 @@ async function fetchRelatedProducts(product: any) {
         `include=${encodeURIComponent(relatedIds.join(","))}&` +
         `status=publish&per_page=${encodeURIComponent(String(relatedIds.length))}`;
 
-      const res = await fetch(url, commonFetchInit);
+      const res = await fetch(url, {
+        headers: commonHeaders,
+        cache: "no-store",
+      });
+
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length) return data;
@@ -197,18 +213,17 @@ async function fetchRelatedProducts(product: any) {
       const url =
         `${base}/wp-json/wc/v3/products?` +
         `category=${encodeURIComponent(String(catId))}&` +
-        `status=publish&per_page=12&orderby=date&order=desc&` +
+        `status=publish&per_page=8&orderby=date&order=desc&` +
         `exclude=${encodeURIComponent(String(currentId || ""))}`;
 
-      const res = await fetch(url, commonFetchInit);
+      const res = await fetch(url, {
+        headers: commonHeaders,
+        cache: "no-store",
+      });
+
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length) {
-          // por si llega el actual igual, lo filtramos y limitamos
-          return data
-            .filter((p: any) => Number(p?.id || 0) !== currentId)
-            .slice(0, 8);
-        }
+        if (Array.isArray(data) && data.length) return data;
       }
     }
 
@@ -273,7 +288,7 @@ function RelatedProductsSection({ products }: { products: any[] }) {
   );
 }
 
-/* -------------------- page -------------------- */
+/* ----------------------------- page ----------------------------- */
 
 export default async function ProductPage({
   params,
@@ -307,7 +322,7 @@ export default async function ProductPage({
     ? buildAdditionalInfoRows(product)
     : [];
 
-  // ✅ Related products siempre
+  // ✅ Related products SIEMPRE
   const relatedProducts = await fetchRelatedProducts(product);
 
   // ✅ Caso especial: producto de prueba
@@ -340,7 +355,6 @@ export default async function ProductPage({
     );
   }
 
-  // Máximos desde dimensiones (solo Fototapety los tiene cargados)
   const maxWidthCm = Number((product as any)?.dimensions?.width || 0);
   const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
 
@@ -432,9 +446,7 @@ export default async function ProductPage({
                 <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
                   <div
                     className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
-                    dangerouslySetInnerHTML={{
-                      __html: product.short_description,
-                    }}
+                    dangerouslySetInnerHTML={{ __html: product.short_description }}
                   />
                 </div>
               ) : null}
@@ -474,7 +486,7 @@ export default async function ProductPage({
               ) : null}
             </section>
 
-            {/* ✅ OPIS FULL WIDTH (igual que en Fototapety) */}
+            {/* ✅ OPIS FULL WIDTH para no-fototapety */}
             {product.description ? (
               <section className="md:col-span-2 mt-2 border-t border-white/10 pt-6">
                 <div className="text-lg font-semibold text-white/90 mb-3">
@@ -487,11 +499,11 @@ export default async function ProductPage({
               </section>
             ) : null}
 
-            {/* ❌ Informacje dodatkowe NO se muestra aquí (solo Fototapety) */}
+            {/* ❌ Informacje dodatkowe NO aquí (solo Fototapety) */}
           </div>
         )}
 
-        {/* ✅ Productos relacionados (no se pierde) */}
+        {/* ✅ Productos relacionados (siempre) */}
         <RelatedProductsSection products={relatedProducts} />
       </div>
     </main>
