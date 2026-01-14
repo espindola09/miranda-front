@@ -1,6 +1,7 @@
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
 import FototapetyProductClient from "./FototapetyProductClient";
+import FototapetySampleClient from "./FototapetySampleClient";
 
 function isFototapetyProduct(product: any) {
   const cats = Array.isArray(product?.categories) ? product.categories : [];
@@ -11,29 +12,71 @@ function isFototapetyProduct(product: any) {
   });
 }
 
+function pickFirstString(v: string | string[] | undefined): string {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v) && v.length > 0) return String(v[0] ?? "");
+  return "";
+}
+
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const sp = (searchParams ? await searchParams : undefined) || {};
+
+  // Para la página de "Próbka": recibimos el SKU del producto origen por querystring
+  const refSku = pickFirstString(sp.ref_sku);
 
   const product = await getProductBySlug(slug);
   if (!product) notFound();
+
+  // Imágenes (robusto)
+  const images = Array.isArray(product?.images) ? product.images : [];
+  const mainImageUrl = images?.[0]?.src || "";
+
+  // Precio HTML (Woo) + fallback (mantengo tu lógica)
+  const priceHtml = (product as any)?.price_html as string | undefined;
+  const fallbackPrice = product?.price ? `${product.price} zł` : "";
+
+  // ✅ Caso especial: producto de prueba (replicar comportamiento del sitio actual)
+  // Nota: este slug debe coincidir con el slug real en Woo.
+  if (slug === "probka-fototapety") {
+    return (
+      <main className="min-h-screen bg-black text-white">
+        <div className="mx-auto w-full max-w-6xl px-6 py-10">
+          {/* Breadcrumb minimal (placeholder para luego) */}
+          <div className="mb-6 text-sm text-white/60">
+            <span className="hover:text-white/80 cursor-pointer">Home</span>
+            <span className="mx-2">/</span>
+            <span className="text-white/80">Produkt</span>
+          </div>
+
+          <FototapetySampleClient
+            productName={product.name}
+            images={images}
+            priceHtml={priceHtml}
+            fallbackPrice={fallbackPrice}
+            refSku={refSku}
+            shortDescriptionHtml={product.short_description || ""}
+            descriptionHtml={product.description || ""}
+            sku={product.sku || ""}
+            stockStatus={product.stock_status || ""}
+            categoryName={product.categories?.[0]?.name || ""}
+          />
+        </div>
+      </main>
+    );
+  }
 
   const isFototapety = isFototapetyProduct(product);
 
   // Máximos desde dimensiones (solo Fototapety los tiene cargados)
   const maxWidthCm = Number((product as any)?.dimensions?.width || 0);
   const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
-
-  // Imágenes
-  const images = Array.isArray(product.images) ? product.images : [];
-  const mainImageUrl = images?.[0]?.src || "";
-
-  // Precio HTML (Woo) + fallback
-  const priceHtml = (product as any)?.price_html as string | undefined;
-  const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -123,7 +166,9 @@ export default async function ProductPage({
                 <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
                   <div
                     className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
-                    dangerouslySetInnerHTML={{ __html: product.short_description }}
+                    dangerouslySetInnerHTML={{
+                      __html: product.short_description,
+                    }}
                   />
                 </div>
               ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
+import Link from "next/link";
 
 type Img = { id?: number; src: string; alt?: string };
 
@@ -14,18 +15,14 @@ type Props = {
   defaultWidthCm?: number;
   defaultHeightCm?: number;
 
-  // panel width cap (100cm por panel)
   maxPanelWidthCm?: number;
 
-  // Price + CTA (del server)
   priceHtml?: string;
   fallbackPrice?: string;
 
-  // Right-side info
   shortDescriptionHtml?: string;
   descriptionHtml?: string;
 
-  // Meta chips
   sku?: string | null;
   stockStatus?: string | null;
   categoryName?: string | null;
@@ -40,11 +37,9 @@ function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-// ---- PRECIO: extraer solo <del> y <ins> (SSR-safe, sin DOMParser) ----
 function buildCleanPriceHtml(raw?: string) {
   if (!raw) return "";
 
-  // 1) Con descuento: tomamos el contenido de <del> y <ins>
   const delMatch = raw.match(/<del[^>]*>([\s\S]*?)<\/del>/i);
   const insMatch = raw.match(/<ins[^>]*>([\s\S]*?)<\/ins>/i);
 
@@ -60,22 +55,17 @@ function buildCleanPriceHtml(raw?: string) {
     }
   }
 
-  // 2) Sin descuento: primer .amount (span amount)
   const amountMatch = raw.match(
     /<span[^>]*class="[^"]*\bamount\b[^"]*"[^>]*>[\s\S]*?<\/span>/i
   );
   if (amountMatch?.[0]) return amountMatch[0].trim();
 
-  // 3) Fallback final: primer <bdi>
   const bdiMatch = raw.match(/<bdi[^>]*>[\s\S]*?<\/bdi>/i);
   if (bdiMatch?.[0]) return bdiMatch[0].trim();
 
   return "";
 }
 
-// =======================
-// MATERIALES (POPUP)
-// =======================
 type Material = {
   id: string;
   name: string;
@@ -128,7 +118,6 @@ const MATERIALS: Material[] = [
   },
 ];
 
-// Íconos inline
 function IconFlipX() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
@@ -162,18 +151,13 @@ function IconZoom() {
   );
 }
 
-// =======================
-// EFEKTY + ADDONS (Druk Premium / Klej do tapet)
-// =======================
 type EffectId = "none" | "sepia" | "bw";
-
 function effectToCssFilter(effect: EffectId): string {
   if (effect === "sepia") return "sepia(1)";
   if (effect === "bw") return "grayscale(1)";
   return "none";
 }
 
-// Icono tipo "?"
 function InfoIcon() {
   return (
     <span
@@ -201,24 +185,19 @@ export default function FototapetyProductClient({
   stockStatus,
   categoryName,
 }: Props) {
-  // Imagen seleccionada (thumbs)
   const [activeIdx, setActiveIdx] = useState(0);
   const active = images?.[activeIdx]?.src || "";
 
-  // Transformaciones (flip/zoom)
   const [flipX, setFlipX] = useState(false);
   const [flipY, setFlipY] = useState(false);
   const [zoom, setZoom] = useState(1);
 
-  // ✅ Efekty state
   const [effect, setEffect] = useState<EffectId>("none");
   const imageFilter = useMemo(() => effectToCssFilter(effect), [effect]);
 
-  // ✅ Add-ons (por ahora NO modifican precio)
   const [drukPremium, setDrukPremium] = useState(false);
   const [klejDoTapet, setKlejDoTapet] = useState(false);
 
-  // Medidas input (a la derecha)
   const [w, setW] = useState<number>(defaultWidthCm);
   const [h, setH] = useState<number>(defaultHeightCm);
 
@@ -272,15 +251,11 @@ export default function FototapetyProductClient({
   const stockLabel =
     stockStatus === "instock" ? "Dostępny" : stockStatus || "";
 
-  // Precio limpio (solo del/ins/amount)
   const cleanPriceHtml = useMemo(
     () => buildCleanPriceHtml(priceHtml),
     [priceHtml]
   );
 
-  // =======================
-  // Material popup state
-  // =======================
   const [materialOpen, setMaterialOpen] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>(
     MATERIALS[0]?.id || ""
@@ -290,7 +265,6 @@ export default function FototapetyProductClient({
     return MATERIALS.find((m) => m.id === selectedMaterialId) || MATERIALS[0];
   }, [selectedMaterialId]);
 
-  // Cerrar popup con ESC
   React.useEffect(() => {
     if (!materialOpen) return;
     const onKey = (e: KeyboardEvent) => {
@@ -300,11 +274,15 @@ export default function FototapetyProductClient({
     return () => window.removeEventListener("keydown", onKey);
   }, [materialOpen]);
 
+  // ✅ Link a la próba con el SKU actual (si existe)
+  const sampleHref =
+    sku && sku.trim().length > 0
+      ? `/produkt/probka-fototapety?ref_sku=${encodeURIComponent(sku)}`
+      : `/produkt/probka-fototapety`;
+
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-      {/* =========================
-          IZQUIERDA: imagen + botones + thumbs + barra
-         ========================= */}
+      {/* IZQUIERDA */}
       <section className="self-start">
         <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
           {active ? (
@@ -313,10 +291,7 @@ export default function FototapetyProductClient({
                 src={active}
                 alt={productName}
                 className="w-full h-auto block object-cover origin-center"
-                style={{
-                  transform,
-                  filter: imageFilter,
-                }}
+                style={{ transform, filter: imageFilter }}
                 loading="eager"
               />
             </div>
@@ -325,7 +300,6 @@ export default function FototapetyProductClient({
           )}
         </div>
 
-        {/* CONTROLES DEBAJO de la imagen */}
         <div className="mt-4 flex items-center justify-center gap-2">
           <button
             type="button"
@@ -366,7 +340,6 @@ export default function FototapetyProductClient({
           </button>
         </div>
 
-        {/* THUMBS */}
         {images?.length > 1 ? (
           <div className="mt-4 grid grid-cols-5 gap-3">
             {images.slice(0, 5).map((img: any, idx: number) => {
@@ -395,7 +368,6 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* BARRA INFO */}
         <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
           <span className="font-semibold">Powierzchnia:</span>{" "}
           {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
@@ -406,16 +378,12 @@ export default function FototapetyProductClient({
         </div>
       </section>
 
-      {/* =========================
-          DERECHA
-         ========================= */}
+      {/* DERECHA */}
       <section className="min-w-0">
-        {/* TÍTULO más chico */}
         <h1 className="text-2xl md:text-3xl font-bold leading-tight">
           {productName}
         </h1>
 
-        {/* Meta rápida */}
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
           {sku ? (
             <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
@@ -436,7 +404,6 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* DIMENSIONES */}
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="block text-sm text-white/80 mb-2">
@@ -498,9 +465,8 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* ✅ EFEKTY + ADDONS (sin clases arbitrarias) */}
+        {/* EFEKTY + ADDONS */}
         <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {/* Efekty */}
           <div className="min-w-0">
             <label className="block text-sm text-white/80 mb-2">Efekty</label>
             <select
@@ -520,12 +486,8 @@ export default function FototapetyProductClient({
             </select>
           </div>
 
-          {/* Druk Premium */}
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">
-              Druk Premium
-            </label>
-
+            <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -540,12 +502,8 @@ export default function FototapetyProductClient({
             </label>
           </div>
 
-          {/* Klej do tapet */}
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">
-              Klej do tapet
-            </label>
-
+            <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -561,7 +519,69 @@ export default function FototapetyProductClient({
           </div>
         </div>
 
-        {/* POPUP Material */}
+        {/* SHORT DESCRIPTION */}
+        {shortDescriptionHtml ? (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <div
+              className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+              dangerouslySetInnerHTML={{ __html: shortDescriptionHtml }}
+            />
+          </div>
+        ) : null}
+
+        {/* PRECIO */}
+        <div className="mt-6">
+          {cleanPriceHtml ? (
+            <div
+              className="text-lg md:text-xl font-semibold text-white/90"
+              dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
+            />
+          ) : (
+            <p className="text-lg md:text-xl font-semibold text-white/90">
+              {fallbackPrice || ""}
+            </p>
+          )}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
+          >
+            Dodaj do koszyka
+          </button>
+          <button
+            type="button"
+            className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
+          >
+            Dodaj do ulubionych
+          </button>
+        </div>
+
+        {/* ✅ LINK A PRÓBKA (como el sitio actual) */}
+        <div className="mt-3 text-xs text-white/60">
+          Możesz uzyskać naszą próbkę fototapety pod tym linkiem:{" "}
+          <Link
+            href={sampleHref}
+            className="text-[#c9b086] hover:underline font-semibold"
+          >
+            Próbka Fototapety 29.00zł
+          </Link>
+        </div>
+
+        {/* LONG DESCRIPTION */}
+        {descriptionHtml ? (
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-white/90 mb-3">Opis</h2>
+            <div
+              className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            />
+          </div>
+        ) : null}
+
+        {/* POPUP MATERIAL (igual al tuyo; omitido acá para no duplicar) */}
         {materialOpen ? (
           <div
             className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
@@ -591,7 +611,6 @@ export default function FototapetyProductClient({
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
-                {/* Lista */}
                 <div className="space-y-2">
                   {MATERIALS.map((m) => {
                     const active = m.id === selectedMaterialId;
@@ -633,7 +652,6 @@ export default function FototapetyProductClient({
                   })}
                 </div>
 
-                {/* Detalle */}
                 <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                   <div className="flex items-center gap-3">
                     <div className="h-14 w-14 rounded-xl bg-white/10 border border-white/10 overflow-hidden shrink-0">
@@ -680,57 +698,6 @@ export default function FototapetyProductClient({
                 </div>
               </div>
             </div>
-          </div>
-        ) : null}
-
-        {/* Descripción corta */}
-        {shortDescriptionHtml ? (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div
-              className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
-              dangerouslySetInnerHTML={{ __html: shortDescriptionHtml }}
-            />
-          </div>
-        ) : null}
-
-        {/* PRECIO */}
-        <div className="mt-6">
-          {cleanPriceHtml ? (
-            <div
-              className="text-lg md:text-xl font-semibold text-white/90"
-              dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
-            />
-          ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">
-              {fallbackPrice || ""}
-            </p>
-          )}
-        </div>
-
-        {/* CTA */}
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <button
-            type="button"
-            className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
-          >
-            Dodaj do koszyka
-          </button>
-          <button
-            type="button"
-            className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
-          >
-            Dodaj do ulubionych
-          </button>
-        </div>
-
-        {/* Descripción larga */}
-        {descriptionHtml ? (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-white/90 mb-3">Opis</h2>
-            <div
-              className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
-              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-            />
           </div>
         ) : null}
       </section>
