@@ -84,6 +84,25 @@ function looksLikeCloudflareHtml(body: string) {
   );
 }
 
+/**
+ * ✅ Soporta 2 tipos de WP_BASE_URL:
+ * - "https://drukdekoracje.pl" (recomendado)
+ * - "https://drukdekoracje.pl/wp-json/wc/v3" (si alguien lo puso así)
+ * Sin romper nada: normaliza para construir la URL final correcta.
+ */
+function buildWooBaseFromWpBase(rawBase: string) {
+  const base = normalizeBaseUrl(rawBase);
+
+  // Si ya apunta directo a wc/v3, lo usamos tal cual.
+  if (/\/wp-json\/wc\/v3$/i.test(base)) return base;
+
+  // Si apunta a wp-json (pero no a wc/v3), completamos.
+  if (/\/wp-json$/i.test(base)) return `${base}/wc/v3`;
+
+  // Caso normal: dominio raíz
+  return `${base}/wp-json/wc/v3`;
+}
+
 async function wooFetch<T = any>(
   path: string,
   params: Record<string, string> = {},
@@ -92,8 +111,10 @@ async function wooFetch<T = any>(
   const auth: WooAuthMode = opts.auth ?? "read";
   assertEnv(auth);
 
+  const wooBase = buildWooBaseFromWpBase(WP_BASE);
+
   const url = new URL(
-    `${normalizeBaseUrl(WP_BASE)}/wp-json/wc/v3/${normalizePath(path)}`
+    `${wooBase}/${normalizePath(path)}`
   );
 
   Object.entries(params).forEach(([key, value]) => {
@@ -183,6 +204,7 @@ export async function getProductBySlug(slug: string) {
     {
       slug,
       status: "publish",
+      per_page: "1",
     },
     {
       revalidate: REVALIDATE_PRODUCTS,
@@ -335,4 +357,124 @@ export async function getProductsByCategoryId(
       auth: "read",
     }
   );
+}
+
+/* ===========================
+   ✅ NUEVO: Relacionados (robusto)
+   - prueba varias categorías
+   - excluye el producto actual
+   - evita categorías genéricas (opcional)
+   - devuelve N productos listos para render
+   =========================== */
+
+type RelatedOptions = {
+  excludeId?: number;
+  limit?: number;             // cuántos querés mostrar (default 4)
+  perCategoryFetch?: number;  // cuántos pedir por categoría para poder filtrar (default 12)
+  skipCategorySlugs?: string[]; // slugs a ignorar
+};
+
+function uniqNumbers(arr: number[]) {
+  return Array.from(new Set(arr.map((n) => Number(n)).filter((n) => Number.isFinite(n) && n > 0)));
+}
+
+function defaultSkipSlugs() {
+  // Ajustá libremente según tus taxonomías reales.
+  return [
+    "bestsellery",
+    "bez",
+    "promocje",
+    "nowosci",
+  ];
+}
+
+function normalizeSlug(s: any) {
+  return String(s || "").trim().toLowerCase();
+}
+
+function pickProductId(p: any) {
+  const id = Number(p?.id);
+  return Number.isFinite(id) ? id : 0;
+}
+
+export async function getRelatedProductsByCategoryIds(
+  categoryIds: number[],
+  opts: RelatedOptions = {}
+) {
+  const limit = opts.limit ?? 4;
+  const perCategoryFetch = opts.perCategoryFetch ?? 12;
+  const excludeId = Number(opts.excludeId || 0);
+
+  const ids = uniqNumbers(categoryIds);
+  const result: any[] = [];
+
+  // Si no me pasan ids, no hago nada
+  if (!ids.length) return result;
+
+  for (const catId of ids) {
+    // Stop early si ya juntamos suficiente
+    if (result.length >= limit) break;
+
+    const products = await getProductsByCategoryId(catId, perCategoryFetch, 1);
+
+    if (!Array.isArray(products) || products.length === 0) continue;
+
+    for (const p of products) {
+      const pid = pickProductId(p);
+      if (!pid) continue;
+      if (excludeId && pid === excludeId) continue;
+
+      // dedupe
+      if (result.some((x) => pickProductId(x) === pid)) continue;
+
+      result.push(p);
+      if (result.length >= limit) break;
+    }
+  }
+
+  return result.slice(0, limit);
+}
+
+/**
+ * ✅ Helper: dado el array product.categories de Woo, arma categoryIds en orden "útil"
+ * - filtra slugs genéricos (bestsellery, bez, etc)
+ * - prioriza categorías "más específicas" (últimas del array si Woo las devuelve así)
+ */
+export function getPreferredCategoryIdsFromProduct(product: any, opts?: { skipSlugs?: string[] }) {
+  const cats = Array.isArray(product?.categories) ? product.categories : [];
+  const skip = (opts?.skipSlugs?.length ? opts.skipSlugs : defaultSkipSlugs()).map(normalizeSlug);
+
+  // Conservamos orden pero quitamos genéricas por slug
+  const filtered = cats.filter((c: any) => {
+    const s = normalizeSlug(c?.slug);
+    return s ? !skip.includes(s) : true;
+  });
+
+  // Si queda vacío, usamos todas (mejor algo que nada)
+  const chosen = filtered.length ? filtered : cats;
+
+  // IDs en orden: primero las “más específicas”
+  // (si tu Woo trae primero principales, esto ayuda. Si no, igual funciona.)
+  const ids = chosen
+    .map((c: any) => Number(c?.id || 0))
+    .filter((n: number) => Number.isFinite(n) && n > 0);
+
+  // inversión para preferir las últimas (a menudo más específicas)
+  return uniqNumbers(ids.reverse());
+}
+
+/**
+ * ✅ API final para tu UI:
+ * Le pasás el producto completo y te devuelve relacionados.
+ */
+export async function getRelatedProductsForProduct(product: any, opts: RelatedOptions = {}) {
+  const categoryIds = getPreferredCategoryIdsFromProduct(product, {
+    skipSlugs: opts.skipCategorySlugs,
+  });
+
+  return getRelatedProductsByCategoryIds(categoryIds, {
+    excludeId: opts.excludeId ?? Number(product?.id || 0),
+    limit: opts.limit ?? 4,
+    perCategoryFetch: opts.perCategoryFetch ?? 12,
+  });
 }

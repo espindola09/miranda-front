@@ -1,7 +1,8 @@
-import { getProductBySlug } from "@/lib/woo";
+import { getProductBySlug, getRelatedProductsForProduct } from "@/lib/woo";
 import { notFound } from "next/navigation";
-import FototapetyProductClient, { AdditionalInfoRow } from "./FototapetyProductClient";
+import FototapetyProductClient from "./FototapetyProductClient";
 import FototapetySampleClient from "./FototapetySampleClient";
+import RelatedProductsClient from "./RelatedProductsClient";
 
 function isFototapetyProduct(product: any) {
   const cats = Array.isArray(product?.categories) ? product.categories : [];
@@ -27,48 +28,6 @@ function uniqueCategoryNames(product: any): string[] {
   return Array.from(new Set(names));
 }
 
-function buildAdditionalInfo(product: any, isFototapety: boolean): AdditionalInfoRow[] {
-  const rows: AdditionalInfoRow[] = [];
-
-  // 1) Dimensiones máximas (solo si existen)
-  const maxW = Number((product as any)?.dimensions?.width || 0);
-  const maxH = Number((product as any)?.dimensions?.height || 0);
-  if (Number.isFinite(maxW) && maxW > 0 && Number.isFinite(maxH) && maxH > 0) {
-    rows.push({
-      label: "Wymiary maksymalne",
-      value: `${maxW} × ${maxH} cm`,
-    });
-  }
-
-  // 2) Atributos (Informacje dodatkowe) desde WooCommerce
-  const attrs = Array.isArray(product?.attributes) ? product.attributes : [];
-  for (const a of attrs) {
-    const visible = Boolean(a?.visible);
-    const name = String(a?.name || "").trim();
-    const options = Array.isArray(a?.options) ? a.options : [];
-    const value = options.map((x: any) => String(x || "").trim()).filter(Boolean).join(", ");
-
-    if (visible && name && value) {
-      rows.push({ label: name, value });
-    }
-  }
-
-  // 3) Materiales (solo para fototapety) – si querés que venga 100% del back,
-  // hay que estandarizarlo en atributos en Woo. Mientras tanto, acá lo dejamos
-  // cubierto por el atributo "Materiał" si existe.
-  // Si tu Woo no lo trae como atributo y querés forzarlo fijo, avisame y lo agrego.
-
-  // 4) Deduplicar por label (por si Woo repite)
-  const map = new Map<string, string>();
-  for (const r of rows) {
-    const k = r.label.trim();
-    if (!k) continue;
-    if (!map.has(k)) map.set(k, r.value);
-  }
-
-  return Array.from(map.entries()).map(([label, value]) => ({ label, value }));
-}
-
 export default async function ProductPage({
   params,
   searchParams,
@@ -84,15 +43,36 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
+  // Imágenes
   const images = Array.isArray(product?.images) ? product.images : [];
   const mainImageUrl = images?.[0]?.src || "";
 
+  // Precio
   const priceHtml = (product as any)?.price_html as string | undefined;
   const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
+  // Meta
   const skuText = String(product?.sku || "");
   const categoryNames = uniqueCategoryNames(product);
 
+  // ✅ RELACIONADOS (SERVER SIDE, para evitar env MISSING)
+  // - limit 4 (como tu captura)
+  // - excluye el propio producto
+  // - intenta varias categorías útiles
+  let relatedProducts: any[] = [];
+  try {
+    relatedProducts = await getRelatedProductsForProduct(product, {
+      limit: 4,
+      excludeId: Number(product?.id || 0),
+      perCategoryFetch: 16,
+    });
+  } catch (e) {
+    // En prod/dev esto te ayuda a ver el error real en consola del server.
+    console.error("[related-products] error:", e);
+    relatedProducts = [];
+  }
+
+  // ✅ Caso especial: producto de prueba
   if (slug === "probka-fototapety") {
     return (
       <main className="min-h-screen bg-black text-white">
@@ -115,6 +95,9 @@ export default async function ProductPage({
             stockStatus={product.stock_status || ""}
             categoryNames={categoryNames}
           />
+
+          {/* ✅ Relacionados debajo (full width) */}
+          <RelatedProductsClient products={relatedProducts} />
         </div>
       </main>
     );
@@ -122,10 +105,9 @@ export default async function ProductPage({
 
   const isFototapety = isFototapetyProduct(product);
 
+  // Máximos desde dimensiones
   const maxWidthCm = Number((product as any)?.dimensions?.width || 0);
   const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
-
-  const additionalInfo = buildAdditionalInfo(product, isFototapety);
 
   return (
     <main className="min-h-screen bg-black text-white">
@@ -153,7 +135,6 @@ export default async function ProductPage({
             stockStatus={product.stock_status || ""}
             categoryName={product.categories?.[0]?.name || ""}
             categoryNames={categoryNames}
-            additionalInfo={additionalInfo}
           />
         ) : (
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -235,6 +216,9 @@ export default async function ProductPage({
                 </button>
               </div>
 
+              {/* Mantengo tu meta debajo del CTA si lo usás aquí */}
+              {/* ... */}
+
               {product.description ? (
                 <div className="mt-8">
                   <h2 className="text-lg font-semibold text-white/90 mb-3">
@@ -249,6 +233,9 @@ export default async function ProductPage({
             </section>
           </div>
         )}
+
+        {/* ✅ Relacionados debajo (full width, como Woo) */}
+        <RelatedProductsClient products={relatedProducts} />
       </div>
     </main>
   );
