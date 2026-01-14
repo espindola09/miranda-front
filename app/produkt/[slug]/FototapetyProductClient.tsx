@@ -73,54 +73,58 @@ function buildCleanPriceHtml(raw?: string) {
   return "";
 }
 
-
 // =======================
 // MATERIALES (POPUP)
 // =======================
 type Material = {
   id: string;
-  name: string;       // Nombre visible en el botón/lista
-  desc: string;       // Descripción larga (Polaco)
-  image?: string;     // URL o path (/public/...) de la mini imagen
+  name: string;
+  desc: string;
+  image?: string;
 };
 
-// ✅ Pegá acá tus 6 materiales con sus descripciones exactas (en PL)
 const MATERIALS: Material[] = [
   {
     id: "flizelina-170g",
     name: "Flizelinowa Gładka 170g",
     desc: "WSTAW TU OPIS 1 (dokładnie jak w Twoich materiałach).",
-    image: "https://drukdekoracje.pl/wp-content/uploads/2024/12/1-lateksowa-600x400-1.webp", // cambia si querés
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/1-lateksowa-600x400-1.webp",
   },
   {
     id: "flizelina-premium-220g",
     name: "Flizelinowa Gładka PREMIUM 220g",
     desc: "WSTAW TU OPIS 2.",
-    image: "/materials/flizelina-220.jpg",
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
     id: "winyl-beton-360g",
     name: "Winyl na flizelinie beton 360g",
     desc: "WSTAW TU OPIS 3.",
-    image: "/materials/winyl-beton-360.jpg",
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
     id: "winyl-strukturalna-360g",
     name: "Winylowa na flizelinie strukturalna 360g",
     desc: "WSTAW TU OPIS 4.",
-    image: "/materials/winyl-strukturalna-360.jpg",
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
     id: "samoprzylepna",
     name: "Samoprzylepna",
     desc: "WSTAW TU OPIS 5.",
-    image: "/materials/samoprzylepna.jpg",
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
     id: "brush-360g",
     name: "Winylowa na flizelinie strukturalna BRUSH 360g",
     desc: "WSTAW TU OPIS 6.",
-    image: "/materials/brush-360.jpg",
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
 ];
 
@@ -158,6 +162,17 @@ function IconZoom() {
   );
 }
 
+// =======================
+// EFEKTY (select)
+// =======================
+type EffectId = "none" | "sepia" | "bw";
+
+function effectToCssFilter(effect: EffectId): string {
+  if (effect === "sepia") return "sepia(1)";
+  if (effect === "bw") return "grayscale(1)";
+  return "none";
+}
+
 export default function FototapetyProductClient({
   productName,
   images,
@@ -182,6 +197,10 @@ export default function FototapetyProductClient({
   const [flipX, setFlipX] = useState(false);
   const [flipY, setFlipY] = useState(false);
   const [zoom, setZoom] = useState(1);
+
+  // ✅ Efekty state
+  const [effect, setEffect] = useState<EffectId>("none");
+  const imageFilter = useMemo(() => effectToCssFilter(effect), [effect]);
 
   // Medidas input (a la derecha)
   const [w, setW] = useState<number>(defaultWidthCm);
@@ -215,6 +234,7 @@ export default function FototapetyProductClient({
     setFlipX(false);
     setFlipY(false);
     setZoom(1);
+    setEffect("none"); // ✅ reset effect
     setW(defaultWidthCm);
     setH(defaultHeightCm);
   };
@@ -275,7 +295,10 @@ export default function FototapetyProductClient({
                 src={active}
                 alt={productName}
                 className="w-full h-auto block object-cover origin-center"
-                style={{ transform }}
+                style={{
+                  transform,
+                  filter: imageFilter, // ✅ aplica efecto
+                }}
                 loading="eager"
               />
             </div>
@@ -345,6 +368,7 @@ export default function FototapetyProductClient({
                     src={img.src}
                     alt={img.alt || productName}
                     className="w-full h-16 block object-cover"
+                    style={{ filter: imageFilter }} // ✅ aplica efecto en thumbs
                     loading="lazy"
                   />
                 </button>
@@ -365,7 +389,7 @@ export default function FototapetyProductClient({
       </section>
 
       {/* =========================
-          DERECHA: título + inputs + MATERIAL + precio + CTA + descripciones
+          DERECHA: título + inputs + MATERIAL + EFEKTY + precio + CTA + descripciones
          ========================= */}
       <section className="min-w-0">
         {/* TÍTULO más chico */}
@@ -432,7 +456,7 @@ export default function FototapetyProductClient({
         </div>
 
         {/* =====================
-            ✅ MATERIAL (botón + popup)
+            MATERIAL (botón + popup)
            ===================== */}
         <div className="mt-6">
           <label className="block text-sm text-white/80 mb-2">Materiał</label>
@@ -446,12 +470,9 @@ export default function FototapetyProductClient({
               {selectedMaterial?.name || "Wybierz materiał"}
             </span>
 
-            <span className="text-white/60 text-sm">
-              Zmień
-            </span>
+            <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
-          {/* Descripción corta del material elegido (opcional) */}
           {selectedMaterial?.desc ? (
             <p className="mt-3 text-sm text-white/70 leading-relaxed">
               {selectedMaterial.desc.length > 160
@@ -461,10 +482,31 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* POPUP */}
+        {/* ✅ EFEKTY (debajo de Material) */}
+        <div className="mt-5">
+          <label className="block text-sm text-white/80 mb-2">Efekty</label>
+
+          <select
+            value={effect}
+            onChange={(e) => setEffect(e.target.value as EffectId)}
+            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20 text-white"
+          >
+            <option value="none" className="bg-black">
+              Brak
+            </option>
+            <option value="sepia" className="bg-black">
+              Sepia
+            </option>
+            <option value="bw" className="bg-black">
+              Czarno - Białe
+            </option>
+          </select>
+        </div>
+
+        {/* POPUP Material */}
         {materialOpen ? (
           <div
-            className="fixed inset-0 z-999 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
             onMouseDown={() => setMaterialOpen(false)}
           >
             <div
@@ -593,7 +635,7 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* ✅ PRECIO: solo números, más chico, sin leyendas */}
+        {/* PRECIO */}
         <div className="mt-6">
           {cleanPriceHtml ? (
             <div
