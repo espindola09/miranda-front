@@ -1,8 +1,16 @@
+// ✅ IMPORTANT: force Node runtime on Vercel (fixes related products not showing in production)
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
-import FototapetyProductClient, { type AdditionalInfoRow } from "./FototapetyProductClient";
+import FototapetyProductClient, {
+  type AdditionalInfoRow,
+} from "./FototapetyProductClient";
 import FototapetySampleClient from "./FototapetySampleClient";
 import Link from "next/link";
+
+/* -------------------- helpers -------------------- */
 
 function isFototapetyProduct(product: any) {
   const cats = Array.isArray(product?.categories) ? product.categories : [];
@@ -24,11 +32,16 @@ function uniqueCategoryNames(product: any): string[] {
   const names = cats
     .map((c: any) => String(c?.name || "").trim())
     .filter(Boolean);
-
   return Array.from(new Set(names));
 }
 
-// ✅ Leyendas fijas pedidas (incrustadas en el código)
+function normalizeBaseUrl(v: unknown) {
+  const s = String(v || "").trim();
+  return s ? s.replace(/\/+$/, "") : "";
+}
+
+/* -------------------- fixed legends -------------------- */
+
 const FIXED_MATERIALS_TEXT =
   "dostępne materiały: Flizelinowa Gładka 170g, Flizelinowa Gładka PREMIUM 220g, Winyl na flizelinie beton, Winylowa na flizelinie strukturalna 360g, Samoprzylepna, Winylowa na flizelinie strukturalna BRUSH 360g";
 
@@ -39,8 +52,7 @@ const FIXED_PANELS_NOTE_TEXT =
  * Construye filas para "Informacje dodatkowe" de forma robusta.
  * - Prioridad: product.attributes (aunque visible venga false).
  * - Fallback: dimensiones (si existen).
- * - ✅ Inserta leyendas fijas debajo de “Wymiary maksymalne”.
- *
+ * - Inserta leyendas fijas debajo de “Wymiary maksymalne”.
  * IMPORTANTE: Esta tabla solo la mostramos en Fototapety.
  */
 function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
@@ -55,7 +67,6 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
       .map((x: any) => String(x || "").trim())
       .filter(Boolean)
       .join(", ");
-
     if (label && value) rows.push({ label, value });
   }
 
@@ -78,12 +89,19 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
   }
 
   // 3) Leyendas fijas debajo de “Wymiary maksymalne”
-  const hasMaterialRow = rows.some((r) => String(r.label || "").toLowerCase().includes("mater"));
+  const hasMaterialRow = rows.some((r) =>
+    String(r.label || "").toLowerCase().includes("mater")
+  );
 
   const hasPanelsNote = rows.some((r) => {
     const v = String(r.value || "").toLowerCase();
     const l = String(r.label || "").toLowerCase();
-    return v.includes("ilość bryt") || v.includes("pamiętaj") || l.includes("ilość") || l.includes("bryt");
+    return (
+      v.includes("ilość bryt") ||
+      v.includes("pamiętaj") ||
+      l.includes("ilość") ||
+      l.includes("bryt")
+    );
   });
 
   const dimsIndex = rows.findIndex(
@@ -112,11 +130,15 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
   return unique;
 }
 
+/* -------------------- related products -------------------- */
+
 /**
  * ✅ Related products (server-side)
  * - Primero intenta product.related_ids (Woo).
- * - Si no hay, fallback por categoría.
+ * - Si no hay o falla, fallback por categoría.
  * - Usa WC REST v3 con Basic Auth vía env vars.
+ *
+ * Nota: En Vercel, forzamos Node runtime arriba para que Buffer exista siempre.
  */
 async function fetchRelatedProducts(product: any) {
   try {
@@ -126,20 +148,16 @@ async function fetchRelatedProducts(product: any) {
       process.env.NEXT_PUBLIC_WORDPRESS_URL;
 
     const ck =
-      process.env.WC_CONSUMER_KEY ||
-      process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
+      process.env.WC_CONSUMER_KEY || process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
 
     const cs =
       process.env.WC_CONSUMER_SECRET ||
       process.env.NEXT_PUBLIC_WC_CONSUMER_SECRET;
 
-    if (!baseRaw || !ck || !cs) return [];
+    const base = normalizeBaseUrl(baseRaw);
+    if (!base || !ck || !cs) return [];
 
-    const base = String(baseRaw).replace(/\/+$/, ""); // sin slash final
-    const auth =
-      typeof Buffer !== "undefined"
-        ? Buffer.from(`${ck}:${cs}`).toString("base64")
-        : "";
+    const auth = Buffer.from(`${ck}:${cs}`).toString("base64");
 
     const currentId = Number(product?.id || 0);
 
@@ -152,6 +170,13 @@ async function fetchRelatedProducts(product: any) {
       .filter((n: number) => Number.isFinite(n) && n > 0 && n !== currentId)
       .slice(0, 8);
 
+    const commonFetchInit: RequestInit = {
+      headers: { Authorization: `Basic ${auth}` },
+      cache: "no-store",
+      // ayuda a evitar comportamientos raros de caching en prod
+      next: { revalidate: 0 } as any,
+    };
+
     // 1) related_ids
     if (relatedIds.length > 0) {
       const url =
@@ -159,11 +184,7 @@ async function fetchRelatedProducts(product: any) {
         `include=${encodeURIComponent(relatedIds.join(","))}&` +
         `status=publish&per_page=${encodeURIComponent(String(relatedIds.length))}`;
 
-      const res = await fetch(url, {
-        headers: auth ? { Authorization: `Basic ${auth}` } : undefined,
-        cache: "no-store",
-      });
-
+      const res = await fetch(url, commonFetchInit);
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length) return data;
@@ -176,17 +197,18 @@ async function fetchRelatedProducts(product: any) {
       const url =
         `${base}/wp-json/wc/v3/products?` +
         `category=${encodeURIComponent(String(catId))}&` +
-        `status=publish&per_page=8&orderby=date&order=desc&` +
+        `status=publish&per_page=12&orderby=date&order=desc&` +
         `exclude=${encodeURIComponent(String(currentId || ""))}`;
 
-      const res = await fetch(url, {
-        headers: auth ? { Authorization: `Basic ${auth}` } : undefined,
-        cache: "no-store",
-      });
-
+      const res = await fetch(url, commonFetchInit);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length) return data;
+        if (Array.isArray(data) && data.length) {
+          // por si llega el actual igual, lo filtramos y limitamos
+          return data
+            .filter((p: any) => Number(p?.id || 0) !== currentId)
+            .slice(0, 8);
+        }
       }
     }
 
@@ -251,6 +273,8 @@ function RelatedProductsSection({ products }: { products: any[] }) {
   );
 }
 
+/* -------------------- page -------------------- */
+
 export default async function ProductPage({
   params,
   searchParams,
@@ -267,15 +291,12 @@ export default async function ProductPage({
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  // Imágenes (robusto)
   const images = Array.isArray(product?.images) ? product.images : [];
   const mainImageUrl = images?.[0]?.src || "";
 
-  // Precio HTML (Woo) + fallback
   const priceHtml = (product as any)?.price_html as string | undefined;
   const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
-  // Meta
   const skuText = String(product?.sku || "");
   const categoryNames = uniqueCategoryNames(product);
 
@@ -286,7 +307,7 @@ export default async function ProductPage({
     ? buildAdditionalInfoRows(product)
     : [];
 
-  // ✅ Related products (server-side) — SIEMPRE (así no desaparecen)
+  // ✅ Related products siempre
   const relatedProducts = await fetchRelatedProducts(product);
 
   // ✅ Caso especial: producto de prueba
@@ -294,7 +315,6 @@ export default async function ProductPage({
     return (
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto w-full max-w-6xl px-6 py-10">
-          {/* Breadcrumb minimal */}
           <div className="mb-6 text-sm text-white/60">
             <span className="hover:text-white/80 cursor-pointer">Home</span>
             <span className="mx-2">/</span>
@@ -314,7 +334,6 @@ export default async function ProductPage({
             categoryNames={categoryNames}
           />
 
-          {/* ✅ Productos relacionados */}
           <RelatedProductsSection products={relatedProducts} />
         </div>
       </main>
@@ -328,7 +347,6 @@ export default async function ProductPage({
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
-        {/* Breadcrumb minimal */}
         <div className="mb-6 text-sm text-white/60">
           <span className="hover:text-white/80 cursor-pointer">Home</span>
           <span className="mx-2">/</span>
@@ -371,7 +389,6 @@ export default async function ProductPage({
                 )}
               </div>
 
-              {/* Thumbs placeholder */}
               {images.length > 1 ? (
                 <div className="mt-4 grid grid-cols-5 gap-3">
                   {images.slice(0, 5).map((img: any, idx: number) => (
@@ -415,7 +432,9 @@ export default async function ProductPage({
                 <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
                   <div
                     className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
-                    dangerouslySetInnerHTML={{ __html: product.short_description }}
+                    dangerouslySetInnerHTML={{
+                      __html: product.short_description,
+                    }}
                   />
                 </div>
               ) : null}
@@ -435,7 +454,6 @@ export default async function ProductPage({
                 </button>
               </div>
 
-              {/* META debajo del CTA */}
               {(skuText || categoryNames.length > 0) ? (
                 <div className="mt-4 text-sm text-white/80 space-y-1">
                   {skuText ? (
@@ -456,7 +474,7 @@ export default async function ProductPage({
               ) : null}
             </section>
 
-            {/* ✅ OPIS FULL WIDTH (igual comportamiento que en Fototapety) */}
+            {/* ✅ OPIS FULL WIDTH (igual que en Fototapety) */}
             {product.description ? (
               <section className="md:col-span-2 mt-2 border-t border-white/10 pt-6">
                 <div className="text-lg font-semibold text-white/90 mb-3">
