@@ -37,6 +37,9 @@ type Props = {
 
   // ✅ NUEVO: filas para "Informacje dodatkowe"
   additionalInfo?: AdditionalInfoRow[] | null;
+
+  // ✅ NUEVO: “Średnia cena z ostatnich 30 dni …” desde el back
+  avgPrice30DaysText?: string | null;
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -188,6 +191,92 @@ function joinCategories(categoryNames?: string[] | null) {
   return cleaned.length ? Array.from(new Set(cleaned)).join(", ") : "";
 }
 
+/* --------------------------- Trust Bar UI -------------------------- */
+
+function IconShield() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 2 20 6v6c0 5-3.6 9.4-8 10-4.4-.6-8-5-8-10V6l8-4Zm0 2.2L6 7v5c0 3.9 2.7 7.5 6 8 3.3-.5 6-4.1 6-8V7l-6-2.8Z"
+      />
+    </svg>
+  );
+}
+
+function IconTruck() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M3 7h11v9H3V7Zm12 2h3l3 3v4h-2.1a2.5 2.5 0 0 1-4.8 0H15V9Zm1.5 2v3h3.2v-1.2L18 11h-1.5ZM7.5 19a2.5 2.5 0 0 1-2.45-2H14a2.5 2.5 0 0 1-4.9 0H7.5Zm10 0a2.5 2.5 0 0 1-2.45-2h4.9a2.5 2.5 0 0 1-2.45 2Z"
+      />
+    </svg>
+  );
+}
+
+function IconClock() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm0 2a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm1 3v5.2l4 2.3-1 1.7-5-2.9V7h2Z"
+      />
+    </svg>
+  );
+}
+
+function normalizeAvgText(input?: string | null) {
+  const s = String(input || "").trim();
+  if (!s) return "";
+  if (/średnia cena/i.test(s)) return s;
+
+  const maybe = s.replace(",", ".").replace(/[^\d.]/g, "");
+  const num = Number(maybe);
+  if (Number.isFinite(num) && num > 0) {
+    const formatted = num.toFixed(2);
+    return `Średnia cena z ofert z ostatnich 30 dni: ${formatted} zł`;
+  }
+  return s;
+}
+
+function ProductTrustBar({ avgText }: { avgText?: string | null }) {
+  const line = normalizeAvgText(avgText);
+
+  return (
+    <div className="mt-4">
+      {line ? <div className="text-xs text-white/70">{line}</div> : null}
+
+      <div className="mt-3 border-t border-white/10" />
+
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 text-[11px] text-white/60">
+        <div className="flex items-center gap-2">
+          <span className="text-[#c9b086]">
+            <IconShield />
+          </span>
+          <span>Kupujesz bezpiecznie: Polski i ekologiczny produkt.</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[#c9b086]">
+            <IconTruck />
+          </span>
+          <span>Darmowa dostawa przy zakupach powyżej 699zł.</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span className="text-[#c9b086]">
+            <IconClock />
+          </span>
+          <span>Czas realizacji od 2 do 5 dni roboczych.</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------- main ------------------------------ */
+
 export default function FototapetyProductClient({
   productName,
   images,
@@ -205,6 +294,7 @@ export default function FototapetyProductClient({
   categoryName,
   categoryNames,
   additionalInfo,
+  avgPrice30DaysText,
 }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const active = images?.[activeIdx]?.src || "";
@@ -285,7 +375,10 @@ export default function FototapetyProductClient({
     return stockStatus === "instock" ? "Dostępny" : stockStatus || "";
   }, [stockStatus]);
 
-  const cleanPriceHtml = useMemo(() => buildCleanPriceHtml(priceHtml), [priceHtml]);
+  const cleanPriceHtml = useMemo(
+    () => buildCleanPriceHtml(priceHtml),
+    [priceHtml]
+  );
 
   const [materialOpen, setMaterialOpen] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>(
@@ -312,7 +405,10 @@ export default function FototapetyProductClient({
       : `/produkt/probka-fototapety`;
   }, [sku]);
 
-  const categoriesText = useMemo(() => joinCategories(categoryNames), [categoryNames]);
+  const categoriesText = useMemo(
+    () => joinCategories(categoryNames),
+    [categoryNames]
+  );
 
   // ✅ Tabs: Opis / Informacje dodatkowe
   const [tab, setTab] = useState<"opis" | "info">("opis");
@@ -407,10 +503,10 @@ export default function FototapetyProductClient({
         ) : null}
 
         <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
-          <span className="font-semibold">Powierzchnia:</span> {areaM2.toFixed(2)} m²{" "}
-          <span className="text-white/40">|</span>{" "}
-          <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
-          <span className="text-white/40">|</span>{" "}
+          <span className="font-semibold">Powierzchnia:</span>{" "}
+          {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
+          <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped}{" "}
+          cm <span className="text-white/40">|</span>{" "}
           <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
           {panels.panelWidth} cm
         </div>
@@ -418,7 +514,9 @@ export default function FototapetyProductClient({
 
       {/* DERECHA */}
       <section className="min-w-0">
-        <h1 className="text-2xl md:text-3xl font-bold leading-tight">{productName}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold leading-tight">
+          {productName}
+        </h1>
 
         {/* Chips debajo del título (DESACTIVADOS). Metadatos solo debajo del CTA. */}
         {false && (
@@ -456,7 +554,9 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultWidthCm)}
             />
-            <div className="mt-2 text-xs text-white/60">Max: {maxW > 0 ? `${maxW} cm` : "—"}</div>
+            <div className="mt-2 text-xs text-white/60">
+              Max: {maxW > 0 ? `${maxW} cm` : "—"}
+            </div>
           </div>
 
           <div>
@@ -471,7 +571,9 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultHeightCm)}
             />
-            <div className="mt-2 text-xs text-white/60">Max: {maxH > 0 ? `${maxH} cm` : "—"}</div>
+            <div className="mt-2 text-xs text-white/60">
+              Max: {maxH > 0 ? `${maxH} cm` : "—"}
+            </div>
           </div>
         </div>
 
@@ -484,7 +586,9 @@ export default function FototapetyProductClient({
             onClick={() => setMaterialOpen(true)}
             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-left hover:border-white/20 transition flex items-center justify-between gap-3"
           >
-            <span className="text-white/90">{selectedMaterial?.name || "Wybierz materiał"}</span>
+            <span className="text-white/90">
+              {selectedMaterial?.name || "Wybierz materiał"}
+            </span>
             <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
@@ -519,7 +623,9 @@ export default function FototapetyProductClient({
           </div>
 
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
+            <label className="block text-sm text-white/80 mb-2">
+              Druk Premium
+            </label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -535,7 +641,9 @@ export default function FototapetyProductClient({
           </div>
 
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
+            <label className="block text-sm text-white/80 mb-2">
+              Klej do tapet
+            </label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -569,7 +677,9 @@ export default function FototapetyProductClient({
               dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
             />
           ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">{fallbackPrice || ""}</p>
+            <p className="text-lg md:text-xl font-semibold text-white/90">
+              {fallbackPrice || ""}
+            </p>
           )}
         </div>
 
@@ -594,7 +704,8 @@ export default function FototapetyProductClient({
           <div className="mt-4 text-sm text-white/80 space-y-1">
             {String(sku || "").trim() ? (
               <div>
-                <span className="font-semibold">SKU:</span> {String(sku || "").trim()}
+                <span className="font-semibold">SKU:</span>{" "}
+                {String(sku || "").trim()}
               </div>
             ) : null}
 
@@ -607,10 +718,16 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
+        {/* ✅ AHORA: PROMEDIO + ENVÍOS DEBAJO DE LOS METADATOS */}
+        <ProductTrustBar avgText={avgPrice30DaysText} />
+
         {/* LINK A PRÓBKA */}
         <div className="mt-3 text-xs text-white/60">
           Możesz uzyskać naszą próbkę fototapety pod tym linkiem:{" "}
-          <Link href={sampleHref} className="text-[#c9b086] hover:underline font-semibold">
+          <Link
+            href={sampleHref}
+            className="text-[#c9b086] hover:underline font-semibold"
+          >
             Próbka Fototapety 29.00zł
           </Link>
         </div>
@@ -673,7 +790,9 @@ export default function FototapetyProductClient({
                   </table>
                 </div>
               ) : (
-                <div className="text-white/60 text-sm">Brak danych dodatkowych.</div>
+                <div className="text-white/60 text-sm">
+                  Brak danych dodatkowych.
+                </div>
               )}
             </div>
           )}
@@ -692,7 +811,9 @@ export default function FototapetyProductClient({
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <div>
-                <h3 className="text-lg font-semibold text-white/90">Wybierz materiał</h3>
+                <h3 className="text-lg font-semibold text-white/90">
+                  Wybierz materiał
+                </h3>
                 <p className="text-sm text-white/60">
                   Kliknij materiał, aby wybrać i zobaczyć opis.
                 </p>
@@ -736,7 +857,9 @@ export default function FototapetyProductClient({
                         </div>
 
                         <div className="min-w-0">
-                          <div className="font-semibold text-white/90 truncate">{m.name}</div>
+                          <div className="font-semibold text-white/90 truncate">
+                            {m.name}
+                          </div>
                           <div className="text-xs text-white/60 truncate">
                             Kliknij, aby zobaczyć opis
                           </div>
@@ -760,7 +883,9 @@ export default function FototapetyProductClient({
                     ) : null}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-base font-semibold text-white/90">{selectedMaterial?.name}</div>
+                    <div className="text-base font-semibold text-white/90">
+                      {selectedMaterial?.name}
+                    </div>
                     <div className="text-sm text-white/60">
                       Klej do tapet • maksymalna szerokość brytu 100 cm
                     </div>

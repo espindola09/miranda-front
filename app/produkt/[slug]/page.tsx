@@ -2,7 +2,9 @@ export const runtime = "nodejs";
 
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
-import FototapetyProductClient, { type AdditionalInfoRow } from "./FototapetyProductClient";
+import FototapetyProductClient, {
+  type AdditionalInfoRow,
+} from "./FototapetyProductClient";
 import FototapetySampleClient from "./FototapetySampleClient";
 import Link from "next/link";
 
@@ -25,7 +27,9 @@ function pickFirstString(v: string | string[] | undefined): string {
 
 function uniqueCategoryNames(product: any): string[] {
   const cats = Array.isArray(product?.categories) ? product.categories : [];
-  const names = cats.map((c: any) => String(c?.name || "").trim()).filter(Boolean);
+  const names = cats
+    .map((c: any) => String(c?.name || "").trim())
+    .filter(Boolean);
   return Array.from(new Set(names));
 }
 
@@ -119,6 +123,57 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
 }
 
 /**
+ * ✅ Extrae el texto de “Średnia cena…” desde el BACK (meta_data).
+ * - Soporta varias keys comunes; cuando confirmes la key exacta, la dejamos fija.
+ * - Devuelve string vacío si no viene.
+ */
+function getAvgPrice30DaysText(product: any): string {
+  const meta = Array.isArray(product?.meta_data) ? product.meta_data : [];
+  if (!meta.length) return "";
+
+  const preferredKeys = new Set<string>([
+    // comunes en plugins / implementaciones
+    "omnibus_avg_30_days",
+    "omnibus_average_30_days",
+    "omnibus_average_price_30_days",
+    "omnibus_price_30_days",
+    "avg_price_30_days",
+    "average_price_30_days",
+    "avg_30_days_price",
+    "wc_omnibus_avg_30_days",
+    "wc_omnibus_average_price_30_days",
+    "_omnibus_avg_30_days",
+    "_omnibus_average_price_30_days",
+    "_omnibus_price_30_days",
+  ]);
+
+  // 1) match directo por key preferida
+  for (const m of meta) {
+    const k = String(m?.key || "").trim();
+    if (!k) continue;
+    if (preferredKeys.has(k)) {
+      const v = m?.value;
+      const s = typeof v === "string" ? v : v != null ? String(v) : "";
+      return String(s || "").trim();
+    }
+  }
+
+  // 2) fallback: si existe una key que contenga omnibus + 30
+  for (const m of meta) {
+    const k = String(m?.key || "").toLowerCase();
+    if (!k) continue;
+    if (k.includes("omnibus") && (k.includes("30") || k.includes("days"))) {
+      const v = m?.value;
+      const s = typeof v === "string" ? v : v != null ? String(v) : "";
+      const out = String(s || "").trim();
+      if (out) return out;
+    }
+  }
+
+  return "";
+}
+
+/**
  * Base64 compatible (Node/Edge).
  * En Node: Buffer.
  * En Edge: btoa (si existiera) o fallback seguro.
@@ -158,8 +213,7 @@ async function fetchRelatedProducts(product: any) {
       process.env.NEXT_PUBLIC_WORDPRESS_URL;
 
     const ck =
-      process.env.WC_CONSUMER_KEY ||
-      process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
+      process.env.WC_CONSUMER_KEY || process.env.NEXT_PUBLIC_WC_CONSUMER_KEY;
 
     const cs =
       process.env.WC_CONSUMER_SECRET ||
@@ -179,7 +233,9 @@ async function fetchRelatedProducts(product: any) {
 
     const relatedIds = relatedIdsRaw
       .map((x: any) => Number(x))
-      .filter((n: number) => Number.isFinite(n) && n > 0 && n !== currentId)
+      .filter(
+        (n: number) => Number.isFinite(n) && n > 0 && n !== currentId
+      )
       .slice(0, 8);
 
     const commonHeaders = {
@@ -194,7 +250,9 @@ async function fetchRelatedProducts(product: any) {
       const url =
         `${base}/wp-json/wc/v3/products?` +
         `include=${encodeURIComponent(relatedIds.join(","))}&` +
-        `status=publish&per_page=${encodeURIComponent(String(relatedIds.length))}`;
+        `status=publish&per_page=${encodeURIComponent(
+          String(relatedIds.length)
+        )}`;
 
       const res = await fetch(url, {
         headers: commonHeaders,
@@ -322,6 +380,9 @@ export default async function ProductPage({
     ? buildAdditionalInfoRows(product)
     : [];
 
+  // ✅ AVG 30 días desde el back (meta)
+  const avgPrice30DaysText = getAvgPrice30DaysText(product);
+
   // ✅ Related products SIEMPRE
   const relatedProducts = await fetchRelatedProducts(product);
 
@@ -385,6 +446,7 @@ export default async function ProductPage({
             categoryName={product.categories?.[0]?.name || ""}
             categoryNames={categoryNames}
             additionalInfo={additionalInfo}
+            avgPrice30DaysText={avgPrice30DaysText}
           />
         ) : (
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -466,7 +528,7 @@ export default async function ProductPage({
                 </button>
               </div>
 
-              {(skuText || categoryNames.length > 0) ? (
+              {skuText || categoryNames.length > 0 ? (
                 <div className="mt-4 text-sm text-white/80 space-y-1">
                   {skuText ? (
                     <div>
