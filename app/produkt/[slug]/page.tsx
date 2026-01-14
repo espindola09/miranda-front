@@ -1,6 +1,6 @@
 import { getProductBySlug } from "@/lib/woo";
 import { notFound } from "next/navigation";
-import FototapetyProductClient from "./FototapetyProductClient";
+import FototapetyProductClient, { AdditionalInfoRow } from "./FototapetyProductClient";
 import FototapetySampleClient from "./FototapetySampleClient";
 
 function isFototapetyProduct(product: any) {
@@ -27,6 +27,48 @@ function uniqueCategoryNames(product: any): string[] {
   return Array.from(new Set(names));
 }
 
+function buildAdditionalInfo(product: any, isFototapety: boolean): AdditionalInfoRow[] {
+  const rows: AdditionalInfoRow[] = [];
+
+  // 1) Dimensiones máximas (solo si existen)
+  const maxW = Number((product as any)?.dimensions?.width || 0);
+  const maxH = Number((product as any)?.dimensions?.height || 0);
+  if (Number.isFinite(maxW) && maxW > 0 && Number.isFinite(maxH) && maxH > 0) {
+    rows.push({
+      label: "Wymiary maksymalne",
+      value: `${maxW} × ${maxH} cm`,
+    });
+  }
+
+  // 2) Atributos (Informacje dodatkowe) desde WooCommerce
+  const attrs = Array.isArray(product?.attributes) ? product.attributes : [];
+  for (const a of attrs) {
+    const visible = Boolean(a?.visible);
+    const name = String(a?.name || "").trim();
+    const options = Array.isArray(a?.options) ? a.options : [];
+    const value = options.map((x: any) => String(x || "").trim()).filter(Boolean).join(", ");
+
+    if (visible && name && value) {
+      rows.push({ label: name, value });
+    }
+  }
+
+  // 3) Materiales (solo para fototapety) – si querés que venga 100% del back,
+  // hay que estandarizarlo en atributos en Woo. Mientras tanto, acá lo dejamos
+  // cubierto por el atributo "Materiał" si existe.
+  // Si tu Woo no lo trae como atributo y querés forzarlo fijo, avisame y lo agrego.
+
+  // 4) Deduplicar por label (por si Woo repite)
+  const map = new Map<string, string>();
+  for (const r of rows) {
+    const k = r.label.trim();
+    if (!k) continue;
+    if (!map.has(k)) map.set(k, r.value);
+  }
+
+  return Array.from(map.entries()).map(([label, value]) => ({ label, value }));
+}
+
 export default async function ProductPage({
   params,
   searchParams,
@@ -37,32 +79,24 @@ export default async function ProductPage({
   const { slug } = await params;
   const sp = (searchParams ? await searchParams : undefined) || {};
 
-  // Para la página de "Próbka": recibimos el SKU del producto origen por querystring
   const refSku = pickFirstString(sp.ref_sku);
 
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  // Imágenes (robusto)
   const images = Array.isArray(product?.images) ? product.images : [];
   const mainImageUrl = images?.[0]?.src || "";
 
-  // Precio HTML (Woo) + fallback (mantengo tu lógica)
   const priceHtml = (product as any)?.price_html as string | undefined;
   const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
-  // Meta (para todos los layouts)
   const skuText = String(product?.sku || "");
   const categoryNames = uniqueCategoryNames(product);
-  const categoriesText = categoryNames.join(", ");
 
-  // ✅ Caso especial: producto de prueba (replicar comportamiento del sitio actual)
-  // Nota: este slug debe coincidir con el slug real en Woo.
   if (slug === "probka-fototapety") {
     return (
       <main className="min-h-screen bg-black text-white">
         <div className="mx-auto w-full max-w-6xl px-6 py-10">
-          {/* Breadcrumb minimal (placeholder para luego) */}
           <div className="mb-6 text-sm text-white/60">
             <span className="hover:text-white/80 cursor-pointer">Home</span>
             <span className="mx-2">/</span>
@@ -88,14 +122,14 @@ export default async function ProductPage({
 
   const isFototapety = isFototapetyProduct(product);
 
-  // Máximos desde dimensiones (solo Fototapety los tiene cargados)
   const maxWidthCm = Number((product as any)?.dimensions?.width || 0);
   const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
+
+  const additionalInfo = buildAdditionalInfo(product, isFototapety);
 
   return (
     <main className="min-h-screen bg-black text-white">
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
-        {/* Breadcrumb minimal (placeholder para luego) */}
         <div className="mb-6 text-sm text-white/60">
           <span className="hover:text-white/80 cursor-pointer">Home</span>
           <span className="mx-2">/</span>
@@ -119,10 +153,10 @@ export default async function ProductPage({
             stockStatus={product.stock_status || ""}
             categoryName={product.categories?.[0]?.name || ""}
             categoryNames={categoryNames}
+            additionalInfo={additionalInfo}
           />
         ) : (
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-            {/* IZQUIERDA */}
             <section className="self-start">
               <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
                 {mainImageUrl ? (
@@ -137,7 +171,6 @@ export default async function ProductPage({
                 )}
               </div>
 
-              {/* Thumbs placeholder */}
               {images.length > 1 ? (
                 <div className="mt-4 grid grid-cols-5 gap-3">
                   {images.slice(0, 5).map((img: any, idx: number) => (
@@ -158,7 +191,6 @@ export default async function ProductPage({
               ) : null}
             </section>
 
-            {/* DERECHA */}
             <section className="min-w-0">
               <h1 className="text-3xl md:text-4xl font-bold leading-tight">
                 {product.name}
@@ -202,24 +234,6 @@ export default async function ProductPage({
                   Dodaj do ulubionych
                 </button>
               </div>
-
-              {/* ✅ META debajo del CTA (para todos los productos) */}
-              {(skuText || categoryNames.length > 0) ? (
-                <div className="mt-4 text-sm text-white/80 space-y-1">
-                  {skuText ? (
-                    <div>
-                      <span className="font-semibold">SKU:</span> {skuText}
-                    </div>
-                  ) : null}
-
-                  {categoryNames.length > 0 ? (
-                    <div>
-                      <span className="font-semibold">Kategorie:</span>{" "}
-                      <span className="text-white/70">{categoriesText}</span>
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
 
               {product.description ? (
                 <div className="mt-8">
