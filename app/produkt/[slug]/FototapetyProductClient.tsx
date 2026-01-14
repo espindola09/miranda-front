@@ -163,7 +163,7 @@ function IconZoom() {
 }
 
 // =======================
-// EFEKTY (select)
+// EFEKTY + ADDONS (Druk Premium / Klej do tapet)
 // =======================
 type EffectId = "none" | "sepia" | "bw";
 
@@ -171,6 +171,18 @@ function effectToCssFilter(effect: EffectId): string {
   if (effect === "sepia") return "sepia(1)";
   if (effect === "bw") return "grayscale(1)";
   return "none";
+}
+
+// Icono tipo "?"
+function InfoIcon() {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#2f6fff] text-[#2f6fff] text-[10px] font-bold leading-none"
+    >
+      ?
+    </span>
+  );
 }
 
 export default function FototapetyProductClient({
@@ -201,6 +213,10 @@ export default function FototapetyProductClient({
   // ✅ Efekty state
   const [effect, setEffect] = useState<EffectId>("none");
   const imageFilter = useMemo(() => effectToCssFilter(effect), [effect]);
+
+  // ✅ Add-ons (por ahora NO modifican precio)
+  const [drukPremium, setDrukPremium] = useState(false);
+  const [klejDoTapet, setKlejDoTapet] = useState(false);
 
   // Medidas input (a la derecha)
   const [w, setW] = useState<number>(defaultWidthCm);
@@ -234,7 +250,9 @@ export default function FototapetyProductClient({
     setFlipX(false);
     setFlipY(false);
     setZoom(1);
-    setEffect("none"); // ✅ reset effect
+    setEffect("none");
+    setDrukPremium(false);
+    setKlejDoTapet(false);
     setW(defaultWidthCm);
     setH(defaultHeightCm);
   };
@@ -297,7 +315,7 @@ export default function FototapetyProductClient({
                 className="w-full h-auto block object-cover origin-center"
                 style={{
                   transform,
-                  filter: imageFilter, // ✅ aplica efecto
+                  filter: imageFilter,
                 }}
                 loading="eager"
               />
@@ -368,7 +386,7 @@ export default function FototapetyProductClient({
                     src={img.src}
                     alt={img.alt || productName}
                     className="w-full h-16 block object-cover"
-                    style={{ filter: imageFilter }} // ✅ aplica efecto en thumbs
+                    style={{ filter: imageFilter }}
                     loading="lazy"
                   />
                 </button>
@@ -389,7 +407,7 @@ export default function FototapetyProductClient({
       </section>
 
       {/* =========================
-          DERECHA: título + inputs + MATERIAL + EFEKTY + precio + CTA + descripciones
+          DERECHA
          ========================= */}
       <section className="min-w-0">
         {/* TÍTULO más chico */}
@@ -455,9 +473,7 @@ export default function FototapetyProductClient({
           </div>
         </div>
 
-        {/* =====================
-            MATERIAL (botón + popup)
-           ===================== */}
+        {/* MATERIAL */}
         <div className="mt-6">
           <label className="block text-sm text-white/80 mb-2">Materiał</label>
 
@@ -482,25 +498,67 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* ✅ EFEKTY (debajo de Material) */}
-        <div className="mt-5">
-          <label className="block text-sm text-white/80 mb-2">Efekty</label>
+        {/* ✅ EFEKTY + ADDONS (sin clases arbitrarias) */}
+        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+          {/* Efekty */}
+          <div className="min-w-0">
+            <label className="block text-sm text-white/80 mb-2">Efekty</label>
+            <select
+              value={effect}
+              onChange={(e) => setEffect(e.target.value as EffectId)}
+              className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20 text-white"
+            >
+              <option value="none" className="bg-black">
+                Brak
+              </option>
+              <option value="sepia" className="bg-black">
+                Sepia
+              </option>
+              <option value="bw" className="bg-black">
+                Czarno - Białe
+              </option>
+            </select>
+          </div>
 
-          <select
-            value={effect}
-            onChange={(e) => setEffect(e.target.value as EffectId)}
-            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20 text-white"
-          >
-            <option value="none" className="bg-black">
-              Brak
-            </option>
-            <option value="sepia" className="bg-black">
-              Sepia
-            </option>
-            <option value="bw" className="bg-black">
-              Czarno - Białe
-            </option>
-          </select>
+          {/* Druk Premium */}
+          <div className="min-w-0">
+            <label className="block text-sm text-white/80 mb-2">
+              Druk Premium
+            </label>
+
+            <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
+              <input
+                type="checkbox"
+                checked={drukPremium}
+                onChange={(e) => setDrukPremium(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+              />
+              <span className="whitespace-nowrap">10zł / m2</span>
+              <span className="translate-y-px">
+                <InfoIcon />
+              </span>
+            </label>
+          </div>
+
+          {/* Klej do tapet */}
+          <div className="min-w-0">
+            <label className="block text-sm text-white/80 mb-2">
+              Klej do tapet
+            </label>
+
+            <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
+              <input
+                type="checkbox"
+                checked={klejDoTapet}
+                onChange={(e) => setKlejDoTapet(e.target.checked)}
+                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+              />
+              <span className="whitespace-nowrap">39.00 zł</span>
+              <span className="translate-y-px">
+                <InfoIcon />
+              </span>
+            </label>
+          </div>
         </div>
 
         {/* POPUP Material */}
