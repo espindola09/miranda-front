@@ -2,14 +2,20 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+/* ✅ ULUBIONE (wishlist) — Provider + Modal global */
+import UlubioneProvider from "@/components/ulubione/UlubioneProvider";
+import UlubioneModal from "@/components/ulubione/UlubioneModal";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -23,11 +29,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="pl" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {/* ✅ Provider global para que el corazón funcione en TODA la app */}
+        <UlubioneProvider>
+          {children}
+
+          {/* ✅ Modal global (se abre al agregar a Ulubione) */}
+          <UlubioneModal />
+        </UlubioneProvider>
       </body>
     </html>
   );

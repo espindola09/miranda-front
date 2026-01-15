@@ -8,6 +8,9 @@ import FototapetyProductClient, {
 import FototapetySampleClient from "./FototapetySampleClient";
 import Link from "next/link";
 
+/* ✅ ULUBIONE (wishlist) — botón corazón (client) */
+import UlubioneHeartButton from "@/components/ulubione/UlubioneHeartButton";
+
 /* ----------------------------- helpers ----------------------------- */
 
 function isFototapetyProduct(product: any) {
@@ -31,6 +34,42 @@ function uniqueCategoryNames(product: any): string[] {
     .map((c: any) => String(c?.name || "").trim())
     .filter(Boolean);
   return Array.from(new Set(names));
+}
+
+/**
+ * ✅ MISMO "limpiador" de precio que usás en FototapetyProductClient / SampleClient.
+ * Deja SOLO:
+ * - <del> + <ins> cuando hay rebaja
+ * - o el <span class="amount"> / <bdi> si no hay rebaja
+ * - elimina textos extra tipo "Pierwotna cena wynosi..."
+ */
+function buildCleanPriceHtml(raw?: string) {
+  if (!raw) return "";
+
+  const delMatch = raw.match(/<del[^>]*>([\s\S]*?)<\/del>/i);
+  const insMatch = raw.match(/<ins[^>]*>([\s\S]*?)<\/ins>/i);
+
+  if (delMatch && insMatch) {
+    const delInner = (delMatch[1] || "").trim();
+    const insInner = (insMatch[1] || "").trim();
+
+    if (delInner && insInner) {
+      return `
+        <del class="opacity-60 mr-2">${delInner}</del>
+        <ins class="no-underline">${insInner}</ins>
+      `.trim();
+    }
+  }
+
+  const amountMatch = raw.match(
+    /<span[^>]*class="[^"]*\bamount\b[^"]*"[^>]*>[\s\S]*?<\/span>/i
+  );
+  if (amountMatch?.[0]) return amountMatch[0].trim();
+
+  const bdiMatch = raw.match(/<bdi[^>]*>[\s\S]*?<\/bdi>/i);
+  if (bdiMatch?.[0]) return bdiMatch[0].trim();
+
+  return "";
 }
 
 // ✅ Leyendas fijas pedidas (incrustadas en el código)
@@ -132,7 +171,6 @@ function getAvgPrice30DaysText(product: any): string {
   if (!meta.length) return "";
 
   const preferredKeys = new Set<string>([
-    // comunes en plugins / implementaciones
     "omnibus_avg_30_days",
     "omnibus_average_30_days",
     "omnibus_average_price_30_days",
@@ -233,9 +271,7 @@ async function fetchRelatedProducts(product: any) {
 
     const relatedIds = relatedIdsRaw
       .map((x: any) => Number(x))
-      .filter(
-        (n: number) => Number.isFinite(n) && n > 0 && n !== currentId
-      )
+      .filter((n: number) => Number.isFinite(n) && n > 0 && n !== currentId)
       .slice(0, 8);
 
     const commonHeaders = {
@@ -306,6 +342,7 @@ function RelatedProductsSection({ products }: { products: any[] }) {
           const name = String(p?.name || "");
           const slug = String(p?.slug || "");
           const priceHtml = String(p?.price_html || "");
+          const clean = buildCleanPriceHtml(priceHtml);
           const fallback = p?.price ? `${p.price} zł` : "";
 
           return (
@@ -331,7 +368,9 @@ function RelatedProductsSection({ products }: { products: any[] }) {
                 </div>
 
                 <div className="mt-2 text-sm text-white/80">
-                  {priceHtml ? (
+                  {clean ? (
+                    <span dangerouslySetInnerHTML={{ __html: clean }} />
+                  ) : priceHtml ? (
                     <span dangerouslySetInnerHTML={{ __html: priceHtml }} />
                   ) : (
                     <span>{fallback}</span>
@@ -368,6 +407,7 @@ export default async function ProductPage({
   const mainImageUrl = images?.[0]?.src || "";
 
   const priceHtml = (product as any)?.price_html as string | undefined;
+  const cleanPriceHtml = buildCleanPriceHtml(priceHtml); // ✅ NUEVO (unifica formato)
   const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
   const skuText = String(product?.sku || "");
@@ -385,6 +425,15 @@ export default async function ProductPage({
 
   // ✅ Related products SIEMPRE
   const relatedProducts = await fetchRelatedProducts(product);
+
+  // ✅ ULUBIONE (para botón corazón)
+  const productId = Number(product?.id || 0);
+  const productSlug = String(product?.slug || slug || "");
+  const productName = String(product?.name || "");
+  const productImg = Array.isArray(product?.images)
+    ? String(product?.images?.[0]?.src || "")
+    : "";
+  const productPriceHtml = cleanPriceHtml || String((product as any)?.price_html || ""); // ✅ NUEVO
 
   // ✅ Caso especial: producto de prueba
   if (slug === "probka-fototapety") {
@@ -430,6 +479,10 @@ export default async function ProductPage({
 
         {isFototapety ? (
           <FototapetyProductClient
+            /* ✅ ULUBIONE: necesarias para que aparezca el corazón */
+            productId={productId}
+            productSlug={productSlug}
+            /* -------------------------------------------------- */
             productName={product.name}
             images={images}
             maxWidthCm={Number.isFinite(maxWidthCm) ? maxWidthCm : 0}
@@ -492,7 +545,12 @@ export default async function ProductPage({
               </h1>
 
               <div className="mt-3">
-                {priceHtml ? (
+                {cleanPriceHtml ? (
+                  <div
+                    className="text-xl md:text-2xl font-semibold text-white/90"
+                    dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
+                  />
+                ) : priceHtml ? (
                   <div
                     className="text-xl md:text-2xl font-semibold text-white/90"
                     dangerouslySetInnerHTML={{ __html: priceHtml }}
@@ -513,19 +571,25 @@ export default async function ProductPage({
                 </div>
               ) : null}
 
-              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row items-stretch">
                 <button
                   type="button"
                   className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
                 >
                   Dodaj do koszyka
                 </button>
-                <button
-                  type="button"
-                  className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
-                >
-                  Dodaj do ulubionych
-                </button>
+
+                {/* ✅ NUEVO: Icono corazón para Ulubione (sin quitar nada) */}
+                <div className="relative">
+                  <UlubioneHeartButton
+                    id={productId}
+                    slug={productSlug}
+                    name={productName}
+                    image={productImg}
+                    priceHtml={productPriceHtml}
+                    className="h-full"
+                  />
+                </div>
               </div>
 
               {skuText || categoryNames.length > 0 ? (

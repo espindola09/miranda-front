@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
+
+/* ✅ ULUBIONE — usar el MISMO botón que el resto */
+import UlubioneHeartButton from "@/components/ulubione/UlubioneHeartButton";
 
 type Img = { id?: number; src: string; alt?: string };
 
@@ -11,6 +14,10 @@ export type AdditionalInfoRow = {
 };
 
 type Props = {
+  // ✅ NUEVO (opcional, para wishlist). NO rompe nada si no lo pasas aún.
+  productId?: number;
+  productSlug?: string;
+
   productName: string;
   images: Img[];
 
@@ -289,6 +296,8 @@ function ProductTrustBar({ avgText }: { avgText?: string | null }) {
 /* ------------------------------- main ------------------------------ */
 
 export default function FototapetyProductClient({
+  productId,
+  productSlug,
   productName,
   images,
   maxWidthCm,
@@ -389,7 +398,9 @@ export default function FototapetyProductClient({
   const cleanPriceHtml = useMemo(() => buildCleanPriceHtml(priceHtml), [priceHtml]);
 
   const [materialOpen, setMaterialOpen] = useState(false);
-  const [selectedMaterialId, setSelectedMaterialId] = useState<string>(MATERIALS[0]?.id || "");
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string>(
+    MATERIALS[0]?.id || ""
+  );
 
   const selectedMaterial = useMemo(() => {
     return MATERIALS.find((m) => m.id === selectedMaterialId) || MATERIALS[0];
@@ -416,6 +427,20 @@ export default function FototapetyProductClient({
   // ✅ Tabs: Opis / Informacje dodatkowe
   const [tab, setTab] = useState<"opis" | "info">("opis");
   const additionalRows = Array.isArray(additionalInfo) ? additionalInfo : [];
+
+  /* ✅ ULUBIONE datos (sin acceder al provider acá -> evita hydration mismatch) */
+  const wishlistId = useMemo(() => {
+    const n = Number(productId || 0);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  }, [productId]);
+
+  const mainImageForWishlist = useMemo(() => {
+    const url = images?.[0]?.src || "";
+    return String(url || "");
+  }, [images]);
+
+  /* ✅ ref queda (no rompe) aunque ya no usemos el botón de texto */
+  const heartBtnRef = useRef<HTMLButtonElement | null>(null);
 
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
@@ -480,7 +505,7 @@ export default function FototapetyProductClient({
         {images?.length > 1 ? (
           <div className="mt-4 grid grid-cols-5 gap-3">
             {images.slice(0, 5).map((img: any, idx: number) => {
-              const isActive = idx === activeIdx;
+              const isActiveThumb = idx === activeIdx;
               return (
                 <button
                   key={img.id ?? `${img.src}-${idx}`}
@@ -488,7 +513,7 @@ export default function FototapetyProductClient({
                   onClick={() => setActiveIdx(idx)}
                   className={[
                     "rounded-xl overflow-hidden border bg-white/5",
-                    isActive ? "border-[#c9b086]" : "border-white/10",
+                    isActiveThumb ? "border-[#c9b086]" : "border-white/10",
                   ].join(" ")}
                   title={img.alt || productName}
                 >
@@ -510,36 +535,14 @@ export default function FototapetyProductClient({
           <span className="text-white/40">|</span>{" "}
           <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
           <span className="text-white/40">|</span>{" "}
-          <span className="font-semibold">Bryty:</span> {panels.panelCount} x {panels.panelWidth} cm
+          <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
+          {panels.panelWidth} cm
         </div>
       </section>
 
       {/* DERECHA */}
       <section className="min-w-0">
         <h1 className="text-2xl md:text-3xl font-bold leading-tight">{productName}</h1>
-
-        {/* Chips debajo del título (DESACTIVADOS). Metadatos solo debajo del CTA. */}
-        {false && (
-          <div className="mt-4 flex flex-wrap gap-2 text-xs">
-            {sku ? (
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                SKU: {sku}
-              </span>
-            ) : null}
-
-            {stockStatus ? (
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                Stan: {stockLabel}
-              </span>
-            ) : null}
-
-            {categoryName ? (
-              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-white/70">
-                Kategoria: {categoryName}
-              </span>
-            ) : null}
-          </div>
-        )}
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -554,7 +557,9 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultWidthCm)}
             />
-            <div className="mt-2 text-xs text-white/60">Max: {maxW > 0 ? `${maxW} cm` : "—"}</div>
+            <div className="mt-2 text-xs text-white/60">
+              Max: {maxW > 0 ? `${maxW} cm` : "—"}
+            </div>
           </div>
 
           <div>
@@ -569,7 +574,9 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultHeightCm)}
             />
-            <div className="mt-2 text-xs text-white/60">Max: {maxH > 0 ? `${maxH} cm` : "—"}</div>
+            <div className="mt-2 text-xs text-white/60">
+              Max: {maxH > 0 ? `${maxH} cm` : "—"}
+            </div>
           </div>
         </div>
 
@@ -582,7 +589,9 @@ export default function FototapetyProductClient({
             onClick={() => setMaterialOpen(true)}
             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-left hover:border-white/20 transition flex items-center justify-between gap-3"
           >
-            <span className="text-white/90">{selectedMaterial?.name || "Wybierz materiał"}</span>
+            <span className="text-white/90">
+              {selectedMaterial?.name || "Wybierz materiał"}
+            </span>
             <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
@@ -667,24 +676,34 @@ export default function FototapetyProductClient({
               dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
             />
           ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">{fallbackPrice || ""}</p>
+            <p className="text-lg md:text-xl font-semibold text-white/90">
+              {fallbackPrice || ""}
+            </p>
           )}
         </div>
 
         {/* CTA */}
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <button
             type="button"
             className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
           >
             Dodaj do koszyka
           </button>
-          <button
-            type="button"
-            className="rounded-2xl border border-white/15 bg-white/5 text-white font-semibold px-5 py-3 hover:bg-white/10 transition"
-          >
-            Dodaj do ulubionych
-          </button>
+
+          {/* ✅ MISMO ICONO / COMPONENTE que el resto */}
+          <div className="relative">
+            <UlubioneHeartButton
+              id={wishlistId}
+              slug={typeof productSlug === "string" ? productSlug : undefined}
+              name={productName}
+              image={mainImageForWishlist || undefined}
+              priceHtml={cleanPriceHtml || priceHtml || ""}
+              className="h-full"
+              // @ts-expect-error ref passthrough (si tu componente no forwardRef, esto se ignora)
+              ref={heartBtnRef}
+            />
+          </div>
         </div>
 
         {/* ✅ METADATOS debajo del CTA (como Woo) */}
@@ -705,7 +724,7 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* ✅ PROMEDIO + ENVÍOS DEBAJO DE LOS METADATOS */}
+        {/* ✅ PROMEDIO + ENVÍOS */}
         <ProductTrustBar avgText={avgPrice30DaysText} />
 
         {/* LINK A PRÓBKA */}
@@ -794,7 +813,9 @@ export default function FototapetyProductClient({
             {/* Header */}
             <div className="flex items-start justify-between px-6 py-5 border-b border-white/10">
               <div className="min-w-0">
-                <h3 className="text-xl font-semibold text-white/90 leading-tight">Wybierz materiał</h3>
+                <h3 className="text-xl font-semibold text-white/90 leading-tight">
+                  Wybierz materiał
+                </h3>
                 <p className="mt-1 text-sm text-white/60">
                   Kliknij materiał, aby wybrać i zobaczyć opis.
                 </p>
@@ -816,7 +837,7 @@ export default function FototapetyProductClient({
                 <div className="max-h-105 overflow-auto pr-1">
                   <div className="space-y-3">
                     {MATERIALS.map((m) => {
-                      const isActive = m.id === selectedMaterialId;
+                      const isActiveMat = m.id === selectedMaterialId;
 
                       return (
                         <button
@@ -825,7 +846,7 @@ export default function FototapetyProductClient({
                           onClick={() => setSelectedMaterialId(m.id)}
                           className={[
                             "w-full text-left rounded-2xl px-4 py-3 transition border shadow-sm",
-                            isActive
+                            isActiveMat
                               ? "border-[#c9b086] bg-white/10"
                               : "border-white/10 bg-white/5 hover:bg-white/7 hover:border-white/20",
                           ].join(" ")}
@@ -846,7 +867,7 @@ export default function FototapetyProductClient({
               {/* Right: preview */}
               <div className="min-w-0">
                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                  {/* Image preview (como la captura) */}
+                  {/* Image preview */}
                   <div className="relative rounded-xl border border-white/10 bg-black/30 overflow-hidden">
                     <div style={{ aspectRatio: "16 / 9" }}>
                       {selectedMaterial?.image ? (
@@ -870,7 +891,6 @@ export default function FototapetyProductClient({
                         className="h-9 w-9 rounded-full bg-black/55 border border-white/15 text-white/80 hover:bg-black/70 transition grid place-items-center"
                         aria-label="Powiększ podgląd"
                         title="Powiększ"
-                        // (solo UI por ahora; no cambia tu funcionalidad actual)
                         onClick={() => {}}
                       >
                         <IconSearchPlus />

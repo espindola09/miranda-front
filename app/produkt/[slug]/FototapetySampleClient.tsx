@@ -2,9 +2,16 @@
 
 import React, { useMemo, useState } from "react";
 
+/* ✅ ULUBIONE — REMOVIDO en Próbka (no lo vamos a usar) */
+// import UlubioneHeartButton from "@/components/ulubione/UlubioneHeartButton";
+
 type Img = { id?: number; src: string; alt?: string };
 
 type Props = {
+  // ✅ Se mantienen por compatibilidad (no rompen si page.tsx los sigue pasando)
+  productId?: number;
+  productSlug?: string;
+
   productName: string;
   images: Img[];
   priceHtml?: string;
@@ -60,15 +67,14 @@ function normalizeString(v: unknown): string {
 
 function joinCategories(categoryNames?: string[] | null) {
   if (!Array.isArray(categoryNames) || categoryNames.length === 0) return "";
-  const cleaned = categoryNames
-    .map((s) => normalizeString(s))
-    .filter(Boolean);
-
+  const cleaned = categoryNames.map((s) => normalizeString(s)).filter(Boolean);
   if (cleaned.length === 0) return "";
   return Array.from(new Set(cleaned)).join(", ");
 }
 
 export default function FototapetySampleClient({
+  productId, // se mantiene por compatibilidad
+  productSlug, // se mantiene por compatibilidad
   productName,
   images,
   priceHtml,
@@ -120,6 +126,7 @@ export default function FototapetySampleClient({
       <section className="self-start">
         <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
           {active ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={active}
               alt={productName}
@@ -228,7 +235,8 @@ export default function FototapetySampleClient({
         {/* SKU del producto original (refSku) — como en el sitio actual */}
         {normalizeString(refSku) ? (
           <div className="mt-4 text-sm text-white/80">
-            <span className="font-semibold">SKU:</span> {normalizeString(refSku)}
+            <span className="font-semibold">SKU:</span>{" "}
+            {normalizeString(refSku)}
           </div>
         ) : null}
 
@@ -248,7 +256,7 @@ export default function FototapetySampleClient({
           </div>
         </div>
 
-        {/* CTA */}
+        {/* CTA (SIN ULUBIONE en Próbka) */}
         <div className="mt-8 flex items-center gap-3">
           <button
             type="button"
@@ -256,16 +264,9 @@ export default function FototapetySampleClient({
           >
             Dodaj do koszyka
           </button>
-          <button
-            type="button"
-            className="h-12 w-12 rounded-2xl border border-white/15 bg-white/5 text-white hover:bg-white/10 transition"
-            aria-label="Dodaj do ulubionych"
-            title="Dodaj do ulubionych"
-          >
-            ♡
-          </button>
         </div>
 
+        {/* ✅ DESCRIPCIÓN CORTA: se queda donde estaba */}
         {shortDescriptionHtml ? (
           <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-5">
             <div
@@ -274,17 +275,18 @@ export default function FototapetySampleClient({
             />
           </div>
         ) : null}
-
-        {descriptionHtml ? (
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-white/90 mb-3">Opis</h2>
-            <div
-              className="prose prose-invert max-w-none"
-              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-            />
-          </div>
-        ) : null}
       </section>
+
+      {/* ✅ DESCRIPCIÓN LARGA: full width como el resto de productos */}
+      {descriptionHtml ? (
+        <section className="md:col-span-2 mt-6 border-t border-white/10 pt-6">
+          <h2 className="text-lg font-semibold text-white/90 mb-4">Opis</h2>
+          <div
+            className="prose prose-invert max-w-none"
+            dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+          />
+        </section>
+      ) : null}
     </div>
   );
 }
