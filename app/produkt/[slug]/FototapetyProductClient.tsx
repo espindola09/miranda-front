@@ -165,6 +165,17 @@ function IconZoom() {
   );
 }
 
+function IconSearchPlus() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M10 18a8 8 0 1 1 5.29-14.01A8 8 0 0 1 10 18Zm0-2a6 6 0 1 0-6-6a6 6 0 0 0 6 6Zm11 5-5.2-5.2 1.4-1.4L22.4 19.6 21 21ZM10 7h2v2h2v2h-2v2h-2v-2H8V9h2V7Z"
+      />
+    </svg>
+  );
+}
+
 type EffectId = "none" | "sepia" | "bw";
 function effectToCssFilter(effect: EffectId): string {
   if (effect === "sepia") return "sepia(1)";
@@ -375,15 +386,10 @@ export default function FototapetyProductClient({
     return stockStatus === "instock" ? "Dostępny" : stockStatus || "";
   }, [stockStatus]);
 
-  const cleanPriceHtml = useMemo(
-    () => buildCleanPriceHtml(priceHtml),
-    [priceHtml]
-  );
+  const cleanPriceHtml = useMemo(() => buildCleanPriceHtml(priceHtml), [priceHtml]);
 
   const [materialOpen, setMaterialOpen] = useState(false);
-  const [selectedMaterialId, setSelectedMaterialId] = useState<string>(
-    MATERIALS[0]?.id || ""
-  );
+  const [selectedMaterialId, setSelectedMaterialId] = useState<string>(MATERIALS[0]?.id || "");
 
   const selectedMaterial = useMemo(() => {
     return MATERIALS.find((m) => m.id === selectedMaterialId) || MATERIALS[0];
@@ -405,10 +411,7 @@ export default function FototapetyProductClient({
       : `/produkt/probka-fototapety`;
   }, [sku]);
 
-  const categoriesText = useMemo(
-    () => joinCategories(categoryNames),
-    [categoryNames]
-  );
+  const categoriesText = useMemo(() => joinCategories(categoryNames), [categoryNames]);
 
   // ✅ Tabs: Opis / Informacje dodatkowe
   const [tab, setTab] = useState<"opis" | "info">("opis");
@@ -503,20 +506,17 @@ export default function FototapetyProductClient({
         ) : null}
 
         <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
-          <span className="font-semibold">Powierzchnia:</span>{" "}
-          {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
-          <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped}{" "}
-          cm <span className="text-white/40">|</span>{" "}
-          <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
-          {panels.panelWidth} cm
+          <span className="font-semibold">Powierzchnia:</span> {areaM2.toFixed(2)} m²{" "}
+          <span className="text-white/40">|</span>{" "}
+          <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
+          <span className="text-white/40">|</span>{" "}
+          <span className="font-semibold">Bryty:</span> {panels.panelCount} x {panels.panelWidth} cm
         </div>
       </section>
 
       {/* DERECHA */}
       <section className="min-w-0">
-        <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-          {productName}
-        </h1>
+        <h1 className="text-2xl md:text-3xl font-bold leading-tight">{productName}</h1>
 
         {/* Chips debajo del título (DESACTIVADOS). Metadatos solo debajo del CTA. */}
         {false && (
@@ -554,9 +554,7 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultWidthCm)}
             />
-            <div className="mt-2 text-xs text-white/60">
-              Max: {maxW > 0 ? `${maxW} cm` : "—"}
-            </div>
+            <div className="mt-2 text-xs text-white/60">Max: {maxW > 0 ? `${maxW} cm` : "—"}</div>
           </div>
 
           <div>
@@ -571,9 +569,7 @@ export default function FototapetyProductClient({
               className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
               placeholder={String(defaultHeightCm)}
             />
-            <div className="mt-2 text-xs text-white/60">
-              Max: {maxH > 0 ? `${maxH} cm` : "—"}
-            </div>
+            <div className="mt-2 text-xs text-white/60">Max: {maxH > 0 ? `${maxH} cm` : "—"}</div>
           </div>
         </div>
 
@@ -586,9 +582,7 @@ export default function FototapetyProductClient({
             onClick={() => setMaterialOpen(true)}
             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-left hover:border-white/20 transition flex items-center justify-between gap-3"
           >
-            <span className="text-white/90">
-              {selectedMaterial?.name || "Wybierz materiał"}
-            </span>
+            <span className="text-white/90">{selectedMaterial?.name || "Wybierz materiał"}</span>
             <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
@@ -623,9 +617,7 @@ export default function FototapetyProductClient({
           </div>
 
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">
-              Druk Premium
-            </label>
+            <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -641,9 +633,7 @@ export default function FototapetyProductClient({
           </div>
 
           <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">
-              Klej do tapet
-            </label>
+            <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
             <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
               <input
                 type="checkbox"
@@ -677,9 +667,7 @@ export default function FototapetyProductClient({
               dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
             />
           ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">
-              {fallbackPrice || ""}
-            </p>
+            <p className="text-lg md:text-xl font-semibold text-white/90">{fallbackPrice || ""}</p>
           )}
         </div>
 
@@ -704,8 +692,7 @@ export default function FototapetyProductClient({
           <div className="mt-4 text-sm text-white/80 space-y-1">
             {String(sku || "").trim() ? (
               <div>
-                <span className="font-semibold">SKU:</span>{" "}
-                {String(sku || "").trim()}
+                <span className="font-semibold">SKU:</span> {String(sku || "").trim()}
               </div>
             ) : null}
 
@@ -718,22 +705,19 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        {/* ✅ AHORA: PROMEDIO + ENVÍOS DEBAJO DE LOS METADATOS */}
+        {/* ✅ PROMEDIO + ENVÍOS DEBAJO DE LOS METADATOS */}
         <ProductTrustBar avgText={avgPrice30DaysText} />
 
         {/* LINK A PRÓBKA */}
         <div className="mt-3 text-xs text-white/60">
           Możesz uzyskać naszą próbkę fototapety pod tym linkiem:{" "}
-          <Link
-            href={sampleHref}
-            className="text-[#c9b086] hover:underline font-semibold"
-          >
+          <Link href={sampleHref} className="text-[#c9b086] hover:underline font-semibold">
             Próbka Fototapety 29.00zł
           </Link>
         </div>
       </section>
 
-      {/* ✅ TABS FULL WIDTH (ocupa todo el ancho del producto) */}
+      {/* ✅ TABS FULL WIDTH */}
       <section className="md:col-span-2 mt-6 border-t border-white/10 pt-6">
         <div className="flex items-center gap-6 text-sm">
           <button
@@ -790,31 +774,28 @@ export default function FototapetyProductClient({
                   </table>
                 </div>
               ) : (
-                <div className="text-white/60 text-sm">
-                  Brak danych dodatkowych.
-                </div>
+                <div className="text-white/60 text-sm">Brak danych dodatkowych.</div>
               )}
             </div>
           )}
         </div>
       </section>
 
-      {/* POPUP MATERIAL */}
+      {/* POPUP MATERIAL — DISEÑO COMO LA IMAGEN */}
       {materialOpen ? (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onMouseDown={() => setMaterialOpen(false)}
         >
           <div
-            className="w-full max-w-3xl rounded-2xl border border-white/10 bg-[#0b0b0b] shadow-2xl overflow-hidden"
+            className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#0b0b0b] shadow-2xl overflow-hidden"
             onMouseDown={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <div>
-                <h3 className="text-lg font-semibold text-white/90">
-                  Wybierz materiał
-                </h3>
-                <p className="text-sm text-white/60">
+            {/* Header */}
+            <div className="flex items-start justify-between px-6 py-5 border-b border-white/10">
+              <div className="min-w-0">
+                <h3 className="text-xl font-semibold text-white/90 leading-tight">Wybierz materiał</h3>
+                <p className="mt-1 text-sm text-white/60">
                   Kliknij materiał, aby wybrać i zobaczyć opis.
                 </p>
               </div>
@@ -822,99 +803,118 @@ export default function FototapetyProductClient({
               <button
                 type="button"
                 onClick={() => setMaterialOpen(false)}
-                className="rounded-lg px-3 py-2 bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition"
+                className="shrink-0 rounded-xl px-4 py-2 bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition shadow"
               >
                 Zamknij
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-5">
-              <div className="space-y-2">
-                {MATERIALS.map((m) => {
-                  const isActive = m.id === selectedMaterialId;
-                  return (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setSelectedMaterialId(m.id)}
-                      className={[
-                        "w-full text-left rounded-xl border px-4 py-3 transition",
-                        isActive
-                          ? "border-[#c9b086] bg-white/10"
-                          : "border-white/10 bg-white/5 hover:border-white/20",
-                      ].join(" ")}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-white/10 border border-white/10 overflow-hidden shrink-0">
-                          {m.image ? (
-                            <img
-                              src={m.image}
-                              alt={m.name}
-                              className="h-full w-full object-cover"
-                              loading="lazy"
-                            />
-                          ) : null}
-                        </div>
+            {/* Body */}
+            <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 p-6">
+              {/* Left: list */}
+              <div className="space-y-3">
+                <div className="max-h-105 overflow-auto pr-1">
+                  <div className="space-y-3">
+                    {MATERIALS.map((m) => {
+                      const isActive = m.id === selectedMaterialId;
 
-                        <div className="min-w-0">
-                          <div className="font-semibold text-white/90 truncate">
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setSelectedMaterialId(m.id)}
+                          className={[
+                            "w-full text-left rounded-2xl px-4 py-3 transition border shadow-sm",
+                            isActive
+                              ? "border-[#c9b086] bg-white/10"
+                              : "border-white/10 bg-white/5 hover:bg-white/7 hover:border-white/20",
+                          ].join(" ")}
+                        >
+                          <div className="text-sm font-semibold text-white/90 leading-snug">
                             {m.name}
                           </div>
-                          <div className="text-xs text-white/60 truncate">
+                          <div className="mt-1 text-xs text-white/50">
                             Kliknij, aby zobaczyć opis
                           </div>
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="h-14 w-14 rounded-xl bg-white/10 border border-white/10 overflow-hidden shrink-0">
-                    {selectedMaterial?.image ? (
-                      <img
-                        src={selectedMaterial.image}
-                        alt={selectedMaterial.name}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : null}
+              {/* Right: preview */}
+              <div className="min-w-0">
+                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                  {/* Image preview (como la captura) */}
+                  <div className="relative rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+                    <div style={{ aspectRatio: "16 / 9" }}>
+                      {selectedMaterial?.image ? (
+                        <img
+                          src={selectedMaterial.image}
+                          alt={selectedMaterial.name}
+                          className="h-full w-full object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="h-full w-full grid place-items-center text-white/50 text-sm">
+                          Brak zdjęcia
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Lupa abajo-derecha */}
+                    <div className="absolute bottom-3 right-3">
+                      <button
+                        type="button"
+                        className="h-9 w-9 rounded-full bg-black/55 border border-white/15 text-white/80 hover:bg-black/70 transition grid place-items-center"
+                        aria-label="Powiększ podgląd"
+                        title="Powiększ"
+                        // (solo UI por ahora; no cambia tu funcionalidad actual)
+                        onClick={() => {}}
+                      >
+                        <IconSearchPlus />
+                      </button>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-base font-semibold text-white/90">
+
+                  {/* Texts */}
+                  <div className="mt-4">
+                    <div className="text-xl font-semibold text-white/90 leading-tight">
                       {selectedMaterial?.name}
                     </div>
-                    <div className="text-sm text-white/60">
+
+                    <div className="mt-1 text-sm text-white/55">
                       Klej do tapet • maksymalna szerokość brytu 100 cm
                     </div>
+
+                    <div className="mt-3 text-sm text-white/75 leading-relaxed whitespace-pre-line">
+                      {selectedMaterial?.desc || "Brak opisu."}
+                    </div>
                   </div>
-                </div>
 
-                <div className="mt-4 text-sm text-white/80 leading-relaxed whitespace-pre-line">
-                  {selectedMaterial?.desc || "Brak opisu."}
-                </div>
+                  {/* Footer buttons */}
+                  <div className="mt-6 flex items-center justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMaterialOpen(false)}
+                      className="rounded-2xl px-6 py-3 bg-white/10 border border-white/15 text-white/85 hover:bg-white/15 transition"
+                    >
+                      Anuluj
+                    </button>
 
-                <div className="mt-5 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setMaterialOpen(false)}
-                    className="rounded-xl px-4 py-2 bg-white/10 border border-white/15 text-white hover:bg-white/15 transition"
-                  >
-                    Anuluj
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setMaterialOpen(false)}
-                    className="rounded-xl px-4 py-2 bg-[#c9b086] text-black font-semibold hover:opacity-90 transition"
-                  >
-                    Wybierz
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => setMaterialOpen(false)}
+                      className="rounded-2xl px-6 py-3 bg-[#c9b086] text-black font-semibold hover:opacity-90 transition shadow"
+                    >
+                      Wybierz
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
+            {/* /Body */}
           </div>
         </div>
       ) : null}
