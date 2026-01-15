@@ -209,6 +209,113 @@ function joinCategories(categoryNames?: string[] | null) {
   return cleaned.length ? Array.from(new Set(cleaned)).join(", ") : "";
 }
 
+/* --------------------------- Stepper Input (flechas DENTRO del input) -------------------------- */
+
+function StepperInput({
+  value,
+  onChange,
+  onBlur,
+  min = 1,
+  max = 9999,
+  placeholder,
+  ariaLabel,
+}: {
+  value: number;
+  onChange: (next: number) => void;
+  onBlur?: () => void;
+  min?: number;
+  max?: number;
+  placeholder?: string;
+  ariaLabel: string;
+}) {
+  const safeValue = Number.isFinite(value) ? value : min;
+
+  const setClamped = (next: number) => {
+    const clamped = Math.max(min, Math.min(max, next));
+    onChange(clamped);
+  };
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={String(safeValue)}
+        onChange={(e) => {
+          const raw = e.target.value;
+
+          if (raw.trim() === "") {
+            onChange(min);
+            return;
+          }
+
+          const onlyDigits = raw.replace(/[^\d]/g, "");
+          if (onlyDigits === "") {
+            onChange(min);
+            return;
+          }
+
+          const n = Number(onlyDigits);
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        onBlur={onBlur}
+        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+        style={{
+          paddingRight: 52, // ✅ espacio reservado para flechas (DENTRO)
+        }}
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+      />
+
+      {/* ✅ Flechas absolutamente posicionadas dentro del input */}
+      <div
+        style={{
+          position: "absolute",
+          right: 10,
+          top: "50%",
+          transform: "translateY(-50%)",
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 10,
+          overflow: "hidden",
+          border: "1px solid rgba(255,255,255,0.12)",
+          background: "rgba(255,255,255,0.06)",
+        }}
+      >
+        <button
+          type="button"
+          aria-label="Increase"
+          onClick={() => setClamped(safeValue + 1)}
+          className="grid place-items-center text-white/80 hover:text-white transition"
+          style={{
+            height: 18,
+            width: 28,
+            lineHeight: 1,
+          }}
+        >
+          <span style={{ fontSize: 10, transform: "translateY(0px)" }}>▲</span>
+        </button>
+
+        <div style={{ height: 1, background: "rgba(255,255,255,0.12)" }} />
+
+        <button
+          type="button"
+          aria-label="Decrease"
+          onClick={() => setClamped(safeValue - 1)}
+          className="grid place-items-center text-white/80 hover:text-white transition"
+          style={{
+            height: 18,
+            width: 28,
+            lineHeight: 1,
+          }}
+        >
+          <span style={{ fontSize: 10, transform: "translateY(-1px)" }}>▼</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 /* --------------------------- Trust Bar UI -------------------------- */
 
 function IconShield() {
@@ -549,14 +656,18 @@ export default function FototapetyProductClient({
             <label className="block text-sm text-white/80 mb-2">
               Szerokość (cm) <span className="text-red-400">*</span>
             </label>
-            <input
-              value={String(w)}
-              onChange={(e) => setW(Number(e.target.value))}
+
+            {/* ✅ Flechas DENTRO del input */}
+            <StepperInput
+              value={w}
+              onChange={(next) => setW(next)}
               onBlur={() => setW(wClamped)}
-              inputMode="numeric"
-              className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+              min={1}
+              max={maxW > 0 ? maxW : 9999}
               placeholder={String(defaultWidthCm)}
+              ariaLabel="Szerokość (cm)"
             />
+
             <div className="mt-2 text-xs text-white/60">
               Max: {maxW > 0 ? `${maxW} cm` : "—"}
             </div>
@@ -566,14 +677,18 @@ export default function FototapetyProductClient({
             <label className="block text-sm text-white/80 mb-2">
               Wysokość (cm) <span className="text-red-400">*</span>
             </label>
-            <input
-              value={String(h)}
-              onChange={(e) => setH(Number(e.target.value))}
+
+            {/* ✅ Flechas DENTRO del input */}
+            <StepperInput
+              value={h}
+              onChange={(next) => setH(next)}
               onBlur={() => setH(hClamped)}
-              inputMode="numeric"
-              className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+              min={1}
+              max={maxH > 0 ? maxH : 9999}
               placeholder={String(defaultHeightCm)}
+              ariaLabel="Wysokość (cm)"
             />
+
             <div className="mt-2 text-xs text-white/60">
               Max: {maxH > 0 ? `${maxH} cm` : "—"}
             </div>
@@ -604,69 +719,73 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-{/* EFEKTY + ADDONS — UNA SOLA FILA + EQUIDISTANTES (SPACE-BETWEEN REAL) */}
-<div className="mt-5 w-full">
-  <div
-    style={{
-      display: "grid",
-      gridTemplateColumns: "max-content max-content max-content",
-      justifyContent: "space-between",
-      alignItems: "start",
-      width: "100%",
-    }}
-  >
-    {/* Col 1: Efekty */}
-    <div style={{ minWidth: 0 }}>
-      <label className="block text-sm text-white/80 mb-2">Efekty</label>
-      <select
-        value={effect}
-        onChange={(e) => setEffect(e.target.value as EffectId)}
-        className="rounded-md bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20 text-white"
-        style={{ width: 180 }} // ✅ fija el ancho para que no “coma” espacio visual
-      >
-        <option value="none" className="bg-black">Brak</option>
-        <option value="sepia" className="bg-black">Sepia</option>
-        <option value="bw" className="bg-black">Czarno - Białe</option>
-      </select>
-    </div>
+        {/* EFEKTY + ADDONS — UNA SOLA FILA + EQUIDISTANTES (SPACE-BETWEEN REAL) */}
+        <div className="mt-5 w-full">
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "max-content max-content max-content",
+              justifyContent: "space-between",
+              alignItems: "start",
+              width: "100%",
+            }}
+          >
+            {/* Col 1: Efekty */}
+            <div style={{ minWidth: 0 }}>
+              <label className="block text-sm text-white/80 mb-2">Efekty</label>
+              <select
+                value={effect}
+                onChange={(e) => setEffect(e.target.value as EffectId)}
+                className="rounded-md bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20 text-white"
+                style={{ width: 180 }}
+              >
+                <option value="none" className="bg-black">
+                  Brak
+                </option>
+                <option value="sepia" className="bg-black">
+                  Sepia
+                </option>
+                <option value="bw" className="bg-black">
+                  Czarno - Białe
+                </option>
+              </select>
+            </div>
 
-    {/* Col 2: Druk Premium */}
-    <div style={{ minWidth: 0 }}>
-      <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
-      <div className="flex items-center gap-2 text-sm text-white/80 select-none">
-        <input
-          type="checkbox"
-          checked={drukPremium}
-          onChange={(e) => setDrukPremium(e.target.checked)}
-          className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
-        />
-        <span className="whitespace-nowrap">10zł / m2</span>
-        <span className="translate-y-px">
-          <InfoIcon />
-        </span>
-      </div>
-    </div>
+            {/* Col 2: Druk Premium */}
+            <div style={{ minWidth: 0 }}>
+              <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
+              <div className="flex items-center gap-2 text-sm text-white/80 select-none">
+                <input
+                  type="checkbox"
+                  checked={drukPremium}
+                  onChange={(e) => setDrukPremium(e.target.checked)}
+                  className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+                />
+                <span className="whitespace-nowrap">10zł / m2</span>
+                <span className="translate-y-px">
+                  <InfoIcon />
+                </span>
+              </div>
+            </div>
 
-    {/* Col 3: Klej do tapet */}
-    <div style={{ minWidth: 0 }}>
-      <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
-      <div className="flex items-center gap-2 text-sm text-white/80 select-none">
-        <input
-          type="checkbox"
-          checked={klejDoTapet}
-          onChange={(e) => setKlejDoTapet(e.target.checked)}
-          className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
-        />
-        <span className="whitespace-nowrap">39.00 zł</span>
-        <span className="translate-y-px">
-          <InfoIcon />
-        </span>
-      </div>
-    </div>
-  </div>
-</div>
-
-
+            {/* Col 3: Klej do tapet */}
+            <div style={{ minWidth: 0 }}>
+              <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
+              <div className="flex items-center gap-2 text-sm text-white/80 select-none">
+                <input
+                  type="checkbox"
+                  checked={klejDoTapet}
+                  onChange={(e) => setKlejDoTapet(e.target.checked)}
+                  className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+                />
+                <span className="whitespace-nowrap">39.00 zł</span>
+                <span className="translate-y-px">
+                  <InfoIcon />
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* SHORT DESCRIPTION */}
         {shortDescriptionHtml ? (

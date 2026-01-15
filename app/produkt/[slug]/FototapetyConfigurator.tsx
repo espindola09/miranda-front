@@ -27,6 +27,85 @@ function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
+// ✅ Stepper input (flechas como spinner, sin depender del browser)
+function StepperInput({
+  value,
+  onChange,
+  onBlur,
+  min = 1,
+  max = 9999,
+  placeholder,
+  ariaLabel,
+}: {
+  value: number;
+  onChange: (next: number) => void;
+  onBlur?: () => void;
+  min?: number;
+  max?: number;
+  placeholder?: string;
+  ariaLabel: string;
+}) {
+  const safeValue = Number.isFinite(value) ? value : min;
+
+  const setClamped = (next: number) => {
+    const clamped = Math.max(min, Math.min(max, next));
+    onChange(clamped);
+  };
+
+  return (
+    <div className="relative w-full">
+      <input
+        type="text"
+        inputMode="numeric"
+        value={String(safeValue)}
+        onChange={(e) => {
+          const raw = e.target.value;
+
+          // Permite borrar temporalmente sin romper (dejamos el último valor válido)
+          if (raw.trim() === "") {
+            onChange(min);
+            return;
+          }
+
+          const onlyDigits = raw.replace(/[^\d]/g, "");
+          if (onlyDigits === "") {
+            onChange(min);
+            return;
+          }
+
+          const n = Number(onlyDigits);
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        onBlur={onBlur}
+        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 pr-12 outline-none focus:border-white/20"
+        placeholder={placeholder}
+        aria-label={ariaLabel}
+      />
+
+      {/* Flechas estilo spinner (como la 2da imagen) */}
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-md border border-white/10 bg-white/5">
+        <button
+          type="button"
+          aria-label="Increase"
+          className="h-5 w-7 grid place-items-center text-white/70 hover:text-white hover:bg-white/10 transition"
+          onClick={() => setClamped(safeValue + 1)}
+        >
+          <span className="text-[10px] leading-none">▲</span>
+        </button>
+        <div className="h-px bg-white/10" />
+        <button
+          type="button"
+          aria-label="Decrease"
+          className="h-5 w-7 grid place-items-center text-white/70 hover:text-white hover:bg-white/10 transition"
+          onClick={() => setClamped(safeValue - 1)}
+        >
+          <span className="text-[10px] leading-none">▼</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // Íconos inline (sin dependencias)
 function IconFlipX() {
   return (
@@ -239,14 +318,18 @@ export default function FototapetyConfigurator({
           <label className="block text-sm text-white/80 mb-2">
             Szerokość (cm) <span className="text-red-400">*</span>
           </label>
-          <input
-            value={String(w)}
-            onChange={(e) => setW(Number(e.target.value))}
+
+          {/* ✅ Input con flechas */}
+          <StepperInput
+            value={w}
+            onChange={(next) => setW(next)}
             onBlur={() => setW(wClamped)}
-            inputMode="numeric"
-            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+            min={1}
+            max={maxW > 0 ? maxW : 9999}
             placeholder={String(defaultWidthCm)}
+            ariaLabel="Szerokość (cm)"
           />
+
           <div className="mt-2 text-xs text-white/60">
             Max: {maxW > 0 ? `${maxW} cm` : "—"}
           </div>
@@ -256,14 +339,18 @@ export default function FototapetyConfigurator({
           <label className="block text-sm text-white/80 mb-2">
             Wysokość (cm) <span className="text-red-400">*</span>
           </label>
-          <input
-            value={String(h)}
-            onChange={(e) => setH(Number(e.target.value))}
+
+          {/* ✅ Input con flechas */}
+          <StepperInput
+            value={h}
+            onChange={(next) => setH(next)}
             onBlur={() => setH(hClamped)}
-            inputMode="numeric"
-            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+            min={1}
+            max={maxH > 0 ? maxH : 9999}
             placeholder={String(defaultHeightCm)}
+            ariaLabel="Wysokość (cm)"
           />
+
           <div className="mt-2 text-xs text-white/60">
             Max: {maxH > 0 ? `${maxH} cm` : "—"}
           </div>
