@@ -8,6 +8,10 @@ type Props = {
   maxPanelWidthCm?: number;
   draggable?: boolean;
   className?: string;
+
+  /** ✅ para corregir drag invertido al espejar */
+  flipX?: boolean;
+  flipY?: boolean;
 };
 
 function clamp(n: number, min: number, max: number) {
@@ -22,10 +26,13 @@ export default function FototapetyCropOverlay({
   maxPanelWidthCm = 100,
   draggable = true,
   className,
+  flipX = false,
+  flipY = false,
 }: Props) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [host, setHost] = useState<Size>({ w: 0, h: 0 });
 
+  // posición manual (en porcentaje para que sobreviva al resize)
   const [manualPosPct, setManualPosPct] = useState<{ x: number; y: number } | null>(
     null
   );
@@ -94,14 +101,17 @@ export default function FototapetyCropOverlay({
       return { left: 0, top: 0 };
     }
 
+    // default centered
     let left = (overlayW - boxW) / 2;
     let top = (overlayH - boxH) / 2;
 
+    // manual en porcentaje -> px
     if (manualPosPct) {
       left = (manualPosPct.x / 100) * overlayW;
       top = (manualPosPct.y / 100) * overlayH;
     }
 
+    // clamp para que no se salga
     left = clamp(left, 0, overlayW - boxW);
     top = clamp(top, 0, overlayH - boxH);
 
@@ -143,12 +153,22 @@ export default function FototapetyCropOverlay({
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
 
-    let nextLeft = dragRef.current.startLeft + dx;
-    let nextTop = dragRef.current.startTop + dy;
+    /**
+     * ✅ FIX REAL:
+     * Cuando el árbol está espejado por scaleX(-1) o scaleY(-1),
+     * el delta “se siente” invertido. Corregimos invirtiendo dx/dy
+     * según el estado flipX/flipY.
+     */
+    const dxEff = flipX ? -dx : dx;
+    const dyEff = flipY ? -dy : dy;
+
+    let nextLeft = dragRef.current.startLeft + dxEff;
+    let nextTop = dragRef.current.startTop + dyEff;
 
     nextLeft = clamp(nextLeft, 0, overlayW - boxW);
     nextTop = clamp(nextTop, 0, overlayH - boxH);
 
+    // guardamos en porcentaje para estabilidad
     const xPct = (nextLeft / overlayW) * 100;
     const yPct = (nextTop / overlayH) * 100;
     setManualPosPct({ x: xPct, y: yPct });
@@ -197,11 +217,9 @@ export default function FototapetyCropOverlay({
   return (
     <div
       ref={hostRef}
-      className={[
-        "absolute inset-0 z-20",
-        "pointer-events-none",
-        className || "",
-      ].join(" ")}
+      className={["absolute inset-0 z-20", "pointer-events-none", className || ""].join(
+        " "
+      )}
       style={{ touchAction: "pan-y" }}
     >
       <div

@@ -221,7 +221,6 @@ export default function FototapetyConfigurator({
         {active ? (
           // ✅ Viewport: imagen + overlay dentro, controles afuera
           <div className="relative w-full overflow-hidden">
-            {/* ✅ Importante: el overlay se posiciona respecto a este contenedor */}
             <div className="relative w-full">
               <img
                 src={active}
@@ -232,11 +231,13 @@ export default function FototapetyConfigurator({
                 draggable={false}
               />
 
-              {/* ✅ OVERLAY de recorte (se basa en w/h; bryty por maxPanelWidthCm) */}
+              {/* ✅ OVERLAY de recorte */}
               <FototapetyCropOverlay
                 widthCm={wClamped}
                 heightCm={hClamped}
                 maxPanelWidthCm={maxPanelWidthCm}
+                flipX={flipX}
+                flipY={flipY}
               />
             </div>
           </div>
@@ -333,7 +334,6 @@ export default function FototapetyConfigurator({
             Szerokość (cm) <span className="text-red-400">*</span>
           </label>
 
-          {/* ✅ Input con flechas */}
           <StepperInput
             value={w}
             onChange={(next) => setW(next)}
@@ -354,7 +354,6 @@ export default function FototapetyConfigurator({
             Wysokość (cm) <span className="text-red-400">*</span>
           </label>
 
-          {/* ✅ Input con flechas */}
           <StepperInput
             value={h}
             onChange={(next) => setH(next)}
