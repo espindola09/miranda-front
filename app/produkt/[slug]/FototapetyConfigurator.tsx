@@ -2,6 +2,9 @@
 
 import React, { useMemo, useState } from "react";
 
+/* ✅ NUEVO: overlay de recorte (drag + bryty) */
+import FototapetyCropOverlay from "@/components/fototapety/FototapetyCropOverlay";
+
 type Img = { id?: number; src: string; alt?: string };
 
 type Props = {
@@ -216,15 +219,26 @@ export default function FototapetyConfigurator({
       {/* IMAGEN PRINCIPAL */}
       <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
         {active ? (
-          // ✅ Viewport: la imagen adentro, controles afuera
-          <div className="w-full overflow-hidden">
-            <img
-              src={active}
-              alt={productName}
-              className="w-full h-auto block object-cover origin-center transition-transform duration-200"
-              style={{ transform }}
-              loading="eager"
-            />
+          // ✅ Viewport: imagen + overlay dentro, controles afuera
+          <div className="relative w-full overflow-hidden">
+            {/* ✅ Importante: el overlay se posiciona respecto a este contenedor */}
+            <div className="relative w-full">
+              <img
+                src={active}
+                alt={productName}
+                className="w-full h-auto block object-cover origin-center transition-transform duration-200 select-none pointer-events-none"
+                style={{ transform }}
+                loading="eager"
+                draggable={false}
+              />
+
+              {/* ✅ OVERLAY de recorte (se basa en w/h; bryty por maxPanelWidthCm) */}
+              <FototapetyCropOverlay
+                widthCm={wClamped}
+                heightCm={hClamped}
+                maxPanelWidthCm={maxPanelWidthCm}
+              />
+            </div>
           </div>
         ) : (
           <div className="p-14 text-white/50">No image</div>

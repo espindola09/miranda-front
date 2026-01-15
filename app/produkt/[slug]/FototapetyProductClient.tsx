@@ -3,6 +3,9 @@
 import React, { useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
+/* ✅ NUEVO: overlay de recorte (drag + bryty) */
+import FototapetyCropOverlay from "@/components/fototapety/FototapetyCropOverlay";
+
 /* ✅ ULUBIONE — usar el MISMO botón que el resto */
 import UlubioneHeartButton from "@/components/ulubione/UlubioneHeartButton";
 
@@ -555,14 +558,31 @@ export default function FototapetyProductClient({
       <section className="self-start">
         <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
           {active ? (
-            <div className="relative">
-              <img
-                src={active}
-                alt={productName}
-                className="w-full h-auto block object-cover origin-center"
-                style={{ transform, filter: imageFilter }}
-                loading="eager"
-              />
+            <div className="relative w-full overflow-hidden">
+              {/* ✅ Wrapper para que el overlay se alinee visualmente con transform+filter */}
+              <div
+                className="relative w-full"
+                style={{
+                  transform,
+                  transformOrigin: "center",
+                  filter: imageFilter,
+                }}
+              >
+                <img
+                  src={active}
+                  alt={productName}
+                  className="w-full h-auto block object-cover origin-center select-none pointer-events-none"
+                  loading="eager"
+                  draggable={false}
+                />
+
+                {/* ✅ RECORTE: ratio = w/h, bryty = maxPanelWidthCm, drag */}
+                <FototapetyCropOverlay
+                  widthCm={wClamped}
+                  heightCm={hClamped}
+                  maxPanelWidthCm={maxPanelWidthCm}
+                />
+              </div>
             </div>
           ) : (
             <div className="p-14 text-white/50">No image</div>
