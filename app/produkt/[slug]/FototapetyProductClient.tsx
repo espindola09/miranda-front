@@ -604,59 +604,69 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* EFEKTY + ADDONS */}
-        <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Efekty</label>
-            <select
-              value={effect}
-              onChange={(e) => setEffect(e.target.value as EffectId)}
-              className="w-full rounded-md bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20 text-white"
-            >
-              <option value="none" className="bg-black">
-                Brak
-              </option>
-              <option value="sepia" className="bg-black">
-                Sepia
-              </option>
-              <option value="bw" className="bg-black">
-                Czarno - Białe
-              </option>
-            </select>
-          </div>
+{/* EFEKTY + ADDONS — UNA SOLA FILA + EQUIDISTANTES (SPACE-BETWEEN REAL) */}
+<div className="mt-5 w-full">
+  <div
+    style={{
+      display: "grid",
+      gridTemplateColumns: "max-content max-content max-content",
+      justifyContent: "space-between",
+      alignItems: "start",
+      width: "100%",
+    }}
+  >
+    {/* Col 1: Efekty */}
+    <div style={{ minWidth: 0 }}>
+      <label className="block text-sm text-white/80 mb-2">Efekty</label>
+      <select
+        value={effect}
+        onChange={(e) => setEffect(e.target.value as EffectId)}
+        className="rounded-md bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20 text-white"
+        style={{ width: 180 }} // ✅ fija el ancho para que no “coma” espacio visual
+      >
+        <option value="none" className="bg-black">Brak</option>
+        <option value="sepia" className="bg-black">Sepia</option>
+        <option value="bw" className="bg-black">Czarno - Białe</option>
+      </select>
+    </div>
 
-          <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
-            <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
-              <input
-                type="checkbox"
-                checked={drukPremium}
-                onChange={(e) => setDrukPremium(e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
-              />
-              <span className="whitespace-nowrap">10zł / m2</span>
-              <span className="translate-y-px">
-                <InfoIcon />
-              </span>
-            </label>
-          </div>
+    {/* Col 2: Druk Premium */}
+    <div style={{ minWidth: 0 }}>
+      <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
+      <div className="flex items-center gap-2 text-sm text-white/80 select-none">
+        <input
+          type="checkbox"
+          checked={drukPremium}
+          onChange={(e) => setDrukPremium(e.target.checked)}
+          className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+        />
+        <span className="whitespace-nowrap">10zł / m2</span>
+        <span className="translate-y-px">
+          <InfoIcon />
+        </span>
+      </div>
+    </div>
 
-          <div className="min-w-0">
-            <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
-            <label className="mt-0.5 inline-flex items-center gap-2 text-sm text-white/80 select-none">
-              <input
-                type="checkbox"
-                checked={klejDoTapet}
-                onChange={(e) => setKlejDoTapet(e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
-              />
-              <span className="whitespace-nowrap">39.00 zł</span>
-              <span className="translate-y-px">
-                <InfoIcon />
-              </span>
-            </label>
-          </div>
-        </div>
+    {/* Col 3: Klej do tapet */}
+    <div style={{ minWidth: 0 }}>
+      <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
+      <div className="flex items-center gap-2 text-sm text-white/80 select-none">
+        <input
+          type="checkbox"
+          checked={klejDoTapet}
+          onChange={(e) => setKlejDoTapet(e.target.checked)}
+          className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+        />
+        <span className="whitespace-nowrap">39.00 zł</span>
+        <span className="translate-y-px">
+          <InfoIcon />
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
         {/* SHORT DESCRIPTION */}
         {shortDescriptionHtml ? (
