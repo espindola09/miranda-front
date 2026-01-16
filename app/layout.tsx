@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
+/* ✅ HEADER global (todas las páginas) */
+import SiteHeader from "@/components/layout/SiteHeader";
+
 /* ✅ ULUBIONE (wishlist) — Provider + Modal global */
 import UlubioneProvider from "@/components/ulubione/UlubioneProvider";
 import UlubioneModal from "@/components/ulubione/UlubioneModal";
@@ -41,6 +44,10 @@ export default function RootLayout({
       >
         {/* ✅ Provider global para que el corazón funcione en TODA la app */}
         <UlubioneProvider>
+          {/* ✅ Header global */}
+          <SiteHeader />
+
+          {/* ✅ Contenido de cada página */}
           {children}
 
           {/* ✅ Modal global (se abre al agregar a Ulubione) */}
