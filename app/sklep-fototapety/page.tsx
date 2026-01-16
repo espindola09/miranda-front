@@ -37,7 +37,9 @@ function flattenChildren(node: any): any[] {
 export default async function SklepFototapetyPage({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined> | Promise<Record<string, string | string[] | undefined>>;
+  searchParams:
+    | Record<string, string | string[] | undefined>
+    | Promise<Record<string, string | string[] | undefined>>;
 }) {
   // Compatibilidad: en algunas versiones puede venir como Promise
   const sp = await Promise.resolve(searchParams);
@@ -45,9 +47,9 @@ export default async function SklepFototapetyPage({
   const page = getPageFromSearchParams(sp);
 
   // “Filtro” por querystring:
-  const catSlug = asString(sp.cat) || "";     // categoría principal (ej: fototapety)
-  const subSlug = asString(sp.sub) || "";     // hija (ej: inspiracje)
-  const leafSlug = asString(sp.leaf) || "";   // nieta (ej: do-salonu) opcional
+  const catSlug = asString(sp.cat) || ""; // categoría principal (ej: fototapety)
+  const subSlug = asString(sp.sub) || ""; // hija (ej: inspiracje)
+  const leafSlug = asString(sp.leaf) || ""; // nieta (ej: do-salonu) opcional
 
   /**
    * CLAVE:
@@ -78,7 +80,7 @@ export default async function SklepFototapetyPage({
 
   if (leafSlug) {
     const leaf = findBySlug(
-      activeSub ? (activeSub.children || []) : (activeTop.children || []),
+      activeSub ? activeSub.children || [] : activeTop.children || [],
       leafSlug
     );
     if (leaf) activeNode = leaf;
@@ -90,23 +92,25 @@ export default async function SklepFototapetyPage({
   const childrenLevel1 = activeTop.children || [];
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-white text-black">
       <div className="mx-auto w-full max-w-7xl px-6 py-10">
         {/* Breadcrumb */}
-        <div className="text-sm text-white/60 mb-6">
-          <Link href="/" className="hover:text-white">Home</Link>
+        <div className="text-sm text-black/60 mb-6">
+          <Link href="/" className="hover:text-black">
+            Home
+          </Link>
           <span className="mx-2">/</span>
-          <span className="text-white/80">Sklep fototapety</span>
+          <span className="text-black/70">Sklep fototapety</span>
           <span className="mx-2">/</span>
-          <span className="text-white">{activeNode.name}</span>
+          <span className="text-black font-semibold">{activeNode.name}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-8">
           {/* SIDEBAR */}
           <aside className="lg:sticky lg:top-8 h-fit">
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-5 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-              <div className="text-lg font-semibold">Kategorie</div>
-              <div className="text-xs text-white/60 mt-1">Wybierz sekcję sklepu</div>
+            <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-sm">
+              <div className="text-lg font-semibold text-black">Kategorie</div>
+              <div className="text-xs text-black/60 mt-1">Wybierz sekcję sklepu</div>
 
               {/* TOP LEVEL */}
               <div className="mt-4 space-y-2">
@@ -119,12 +123,12 @@ export default async function SklepFototapetyPage({
                       className={[
                         "flex items-center justify-between rounded-2xl border px-4 py-3 transition",
                         isActive
-                          ? "border-white/20 bg-white/10"
-                          : "border-white/10 bg-black/20 hover:bg-white/10",
+                          ? "border-[#c9b086] bg-[#c9b086]/10"
+                          : "border-black/10 bg-white hover:border-[#c9b086] hover:bg-black/2",
                       ].join(" ")}
                     >
-                      <span className="font-medium">{c.name}</span>
-                      <span className="text-xs text-white/60">{c.count}</span>
+                      <span className="font-medium text-black">{c.name}</span>
+                      <span className="text-xs text-black/50">{c.count}</span>
                     </Link>
                   );
                 })}
@@ -133,10 +137,8 @@ export default async function SklepFototapetyPage({
               {/* SUBMENU estilo WP: hijos del top seleccionado */}
               {childrenLevel1.length ? (
                 <>
-                  <div className="mt-6 border-t border-white/10 pt-4">
-                    <div className="text-sm font-semibold text-white/90">
-                      {activeTop.name}
-                    </div>
+                  <div className="mt-6 border-t border-black/10 pt-4">
+                    <div className="text-sm font-semibold text-black">{activeTop.name}</div>
 
                     <div className="mt-3 space-y-2">
                       {childrenLevel1.map((child: any) => {
@@ -146,16 +148,23 @@ export default async function SklepFototapetyPage({
                         const hasChildren = (child.children || []).length > 0;
 
                         return (
-                          <div key={child.id} className="rounded-2xl border border-white/10 bg-black/20">
+                          <div
+                            key={child.id}
+                            className="rounded-2xl border border-black/10 bg-white"
+                          >
                             <Link
-                              href={`/sklep-fototapety?cat=${encodeURIComponent(activeTop.slug)}&sub=${encodeURIComponent(child.slug)}`}
+                              href={`/sklep-fototapety?cat=${encodeURIComponent(
+                                activeTop.slug
+                              )}&sub=${encodeURIComponent(child.slug)}`}
                               className={[
                                 "flex items-center justify-between px-4 py-3 rounded-2xl transition",
-                                isSubActive ? "bg-white/10" : "hover:bg-white/10",
+                                isSubActive
+                                  ? "bg-[#c9b086]/10"
+                                  : "hover:bg-black/2",
                               ].join(" ")}
                             >
-                              <span className="font-medium">{child.name}</span>
-                              <span className="text-xs text-white/60">
+                              <span className="font-medium text-black">{child.name}</span>
+                              <span className="text-xs text-black/50">
                                 {hasChildren ? "▸" : child.count}
                               </span>
                             </Link>
@@ -169,12 +178,16 @@ export default async function SklepFototapetyPage({
                                     return (
                                       <Link
                                         key={leaf.id}
-                                        href={`/sklep-fototapety?cat=${encodeURIComponent(activeTop.slug)}&sub=${encodeURIComponent(child.slug)}&leaf=${encodeURIComponent(leaf.slug)}`}
+                                        href={`/sklep-fototapety?cat=${encodeURIComponent(
+                                          activeTop.slug
+                                        )}&sub=${encodeURIComponent(
+                                          child.slug
+                                        )}&leaf=${encodeURIComponent(leaf.slug)}`}
                                         className={[
                                           "block rounded-xl px-3 py-2 text-sm border transition",
                                           isLeafActive
-                                            ? "border-white/20 bg-white/10 text-white"
-                                            : "border-transparent text-white/70 hover:text-white hover:bg-white/10",
+                                            ? "border-[#c9b086] bg-[#c9b086]/10 text-black"
+                                            : "border-transparent text-black/70 hover:text-black hover:bg-black/2",
                                         ].join(" ")}
                                       >
                                         {leaf.name}
@@ -191,11 +204,11 @@ export default async function SklepFototapetyPage({
                   </div>
 
                   {/* Links a la vista “SEO” por ruta real */}
-                  <div className="mt-6 border-t border-white/10 pt-4">
-                    <div className="text-xs text-white/60 mb-2">Linki do pełnych kategorii:</div>
+                  <div className="mt-6 border-t border-black/10 pt-4">
+                    <div className="text-xs text-black/60 mb-2">Linki do pełnych kategorii:</div>
                     <div className="text-sm space-y-1">
                       <Link
-                        className="block text-white/70 hover:text-white underline"
+                        className="block text-black/70 hover:text-black underline decoration-[#c9b086]"
                         href={`/kategoria-produktu/${activeTop.slug}`}
                       >
                         /kategoria-produktu/{activeTop.slug}
@@ -203,7 +216,7 @@ export default async function SklepFototapetyPage({
 
                       {activeSub ? (
                         <Link
-                          className="block text-white/70 hover:text-white underline"
+                          className="block text-black/70 hover:text-black underline decoration-[#c9b086]"
                           href={`/kategoria-produktu/${activeTop.slug}/${activeSub.slug}`}
                         >
                           /kategoria-produktu/{activeTop.slug}/{activeSub.slug}
@@ -219,34 +232,36 @@ export default async function SklepFototapetyPage({
           {/* MAIN */}
           <section>
             {/* HERO / intro */}
-            <div className="rounded-3xl border border-white/10 bg-linear-to-b from-white/10 to-white/5 p-8 shadow-[0_0_0_1px_rgba(255,255,255,0.04)]">
-              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight">
+            <div className="rounded-3xl border border-black/10 bg-white p-8 shadow-sm">
+              <h1 className="text-4xl md:text-5xl font-extrabold leading-tight text-black">
                 Odkryj świat fototapet – odmień
                 <br />
                 swoje wnętrze w mgnieniu oka
               </h1>
 
-              <p className="mt-4 max-w-3xl text-white/75">
+              <p className="mt-4 max-w-3xl text-black/70">
                 W naszym sklepie znajdziesz fototapety na wymiar, naklejki ścienne, obrazy na płótnie i plakaty.
                 Wybierz kategorię po lewej albo przejdź do pełnych list kategorii.
               </p>
 
-              <div className="mt-5 text-white/80 text-sm">
+              <div className="mt-5 text-black/70 text-sm">
                 Wyświetlanie produktów dla kategorii:{" "}
-                <span className="font-semibold text-white">{activeNode.name}</span>
+                <span className="font-semibold text-black">{activeNode.name}</span>
               </div>
             </div>
 
             {/* PRODUCTS */}
             <div className="mt-10 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">Produkty</h2>
-                <div className="text-sm text-white/60">Lista produktów w wybranej kategorii.</div>
+                <h2 className="text-2xl font-bold text-black">Produkty</h2>
+                <div className="text-sm text-black/60">
+                  Lista produktów w wybranej kategorii.
+                </div>
               </div>
 
               <Link
                 href={`/sklep-fototapety?cat=${encodeURIComponent(activeTop.slug)}`}
-                className="text-sm text-white/70 hover:text-white underline"
+                className="text-sm text-black/70 hover:text-black underline decoration-[#c9b086]"
               >
                 Wyczyść filtr
               </Link>
@@ -259,24 +274,34 @@ export default async function SklepFototapetyPage({
                   <Link
                     key={p.id}
                     href={`/produkt/${p.slug}`}
-                    className="rounded-3xl border border-white/10 bg-white/5 overflow-hidden hover:bg-white/10 transition"
+                    className="
+                      group rounded-3xl border border-black/10 bg-white overflow-hidden transition
+                      hover:border-[#c9b086] hover:shadow-md
+                    "
                   >
-                    <div className="relative w-full pt-[62.5%] bg-black/40 overflow-hidden">
+                    <div className="relative w-full pt-[62.5%] bg-black/3 overflow-hidden">
                       <div className="absolute inset-0">
                         {img ? (
                           <img
                             src={img}
                             alt={p.name}
-                            className="w-full h-full object-cover block"
+                            className="w-full h-full object-cover block transition-transform duration-300 group-hover:scale-[1.03]"
                             loading="lazy"
                           />
-                        ) : null}
+                        ) : (
+                          <div className="w-full h-full grid place-items-center text-black/40 text-sm">
+                            No image
+                          </div>
+                        )}
                       </div>
                     </div>
 
                     <div className="p-5">
-                      <div className="font-semibold text-white/95 line-clamp-2">{p.name}</div>
-                      <div className="mt-2 text-white/70">{p.price} zł</div>
+                      <div className="font-semibold text-black line-clamp-2">{p.name}</div>
+                      <div className="mt-2 text-black/70">
+                        <span className="text-[#c9b086] font-semibold">{p.price}</span>{" "}
+                        <span className="text-black/50">zł</span>
+                      </div>
                     </div>
                   </Link>
                 );
@@ -288,21 +313,21 @@ export default async function SklepFototapetyPage({
               {page > 1 ? (
                 <Link
                   href={buildPageHref(sp, page - 1)}
-                  className="px-4 py-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition"
+                  className="px-4 py-2 rounded-full border border-black/15 bg-white hover:border-[#c9b086] hover:bg-[#c9b086]/10 transition"
                 >
                   Prev
                 </Link>
               ) : (
-                <span className="px-4 py-2 rounded-full border border-white/10 text-white/40">
+                <span className="px-4 py-2 rounded-full border border-black/10 text-black/40">
                   Prev
                 </span>
               )}
 
-              <span className="text-white/70">Page {page}</span>
+              <span className="text-black/70">Page {page}</span>
 
               <Link
                 href={buildPageHref(sp, page + 1)}
-                className="px-4 py-2 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 transition"
+                className="px-4 py-2 rounded-full border border-black/15 bg-white hover:border-[#c9b086] hover:bg-[#c9b086]/10 transition"
               >
                 Next
               </Link>
