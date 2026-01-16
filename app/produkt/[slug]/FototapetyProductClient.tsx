@@ -93,50 +93,133 @@ function buildCleanPriceHtml(raw?: string) {
 type Material = {
   id: string;
   name: string;
-  desc: string;
+  subtitle: string; // ✅ NUEVO: subtítulo corto (como en tu texto)
+  desc: string; // ✅ mantiene compatibilidad (lo usamos como “cuerpo”)
+  features: string[]; // ✅ NUEVO: lista de “Cechy materiału”
   image?: string;
 };
 
 const MATERIALS: Material[] = [
   {
     id: "flizelina-170g",
-    name: "Flizelinowa Gładka 170g",
-    desc: "WSTAW TU OPIS 1 (dokładnie jak w Twoich materiałach).",
+    name: "Flizelinowa Gładka 170 g",
+    subtitle: "Uniwersalna i lekka fototapeta do codziennych wnętrz",
+    desc:
+      "Klasyczna tapeta flizelinowa o gładkiej, matowej powierzchni. Dobra jakość w atrakcyjnej cenie, idealna do mieszkań, biur i przestrzeni o umiarkowanym użytkowaniu.",
+    features: [
+      "Wykończenie: matowe",
+      "Struktura: gładka",
+      "Gramatura: 170 g/m²",
+      "Podkład: flizelinowy",
+      "Zmywalna i odporna na zabrudzenia",
+      "Certyfikat trudnopalności",
+      "Atest higieniczny",
+      "Pasowanie brytów: stykowo",
+      "Maks. szerokość brytu: 100 cm",
+    ],
     image:
       "https://drukdekoracje.pl/wp-content/uploads/2024/12/1-lateksowa-600x400-1.webp",
   },
   {
     id: "flizelina-premium-220g",
-    name: "Flizelinowa Gładka PREMIUM 220g",
-    desc: "WSTAW TU OPIS 2.",
+    name: "Flizelinowa Gładka PREMIUM 220 g",
+    subtitle: "Wyższa gramatura, lepsza trwałość i jakość druku",
+    desc:
+      "Wersja premium tapety flizelinowej, przeznaczona do bardziej wymagających realizacji. Grubszy materiał zapewnia lepsze krycie ściany oraz bardziej elegancki efekt końcowy.",
+    features: [
+      "Wykończenie: matowe",
+      "Struktura: gładka",
+      "Gramatura: 220 g/m²",
+      "Podkład: flizelinowy",
+      "Zmywalna",
+      "Odporna na zabrudzenia",
+      "Certyfikat trudnopalności",
+      "Atest higieniczny",
+      "Pasowanie brytów: stykowo",
+      "Maks. szerokość brytu: 100 cm",
+    ],
     image:
       "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
     id: "winyl-beton-360g",
-    name: "Winyl na flizelinie beton 360g",
-    desc: "WSTAW TU OPIS 3.",
+    name: "Winyl na flizelinie BETON 360 g",
+    subtitle: "Wyrazista struktura betonu i najwyższa trwałość",
+    desc:
+      "Tapeta winylowa o realistycznej strukturze betonu. Bardzo trwała i odporna, polecana do nowoczesnych wnętrz oraz przestrzeni komercyjnych.",
+    features: [
+      "Wykończenie: matowe",
+      "Struktura: beton",
+      "Gramatura: ok. 360 g/m²",
+      "Podkład: flizelinowy",
+      "Wysoka odporność na zabrudzenia",
+      "100% ekologiczna",
+      "Certyfikat trudnopalności",
+      "Atest higieniczny",
+      "Pasowanie brytów: stykowo",
+      "Maks. szerokość brytu: 100 cm",
+    ],
     image:
       "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
-    id: "winyl-strukturalna-360g",
-    name: "Winylowa na flizelinie strukturalna 360g",
-    desc: "WSTAW TU OPIS 4.",
-    image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
-  },
-  {
-    id: "samoprzylepna",
-    name: "Samoprzylepna",
-    desc: "WSTAW TU OPIS 5.",
+    id: "winyl-linen-360g",
+    name: "Winyl na flizelinie LINEN 360 g",
+    subtitle: "Elegancka struktura płótna – wybór projektantów wnętrz",
+    desc:
+      "Tapeta winylowa o strukturze płótna malarskiego (canvas). Bardzo popularna w aranżacjach premium, nadaje wnętrzom miękkości i elegancji.",
+    features: [
+      "Wykończenie: matowe",
+      "Struktura: linen / canvas",
+      "Gramatura: ok. 360 g/m²",
+      "Podkład: flizelinowy",
+      "100% ekologiczna",
+      "Uniwersalne zastosowanie",
+      "Certyfikat trudnopalności",
+      "Atest higieniczny",
+      "Pasowanie brytów: stykowo",
+      "Maks. szerokość brytu: 100 cm",
+    ],
     image:
       "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
   {
     id: "brush-360g",
-    name: "Winylowa na flizelinie strukturalna BRUSH 360g",
-    desc: "WSTAW TU OPIS 6.",
+    name: "Winyl na flizelinie BRUSH 360 g",
+    subtitle: "Dynamiczna faktura pociągnięcia pędzla",
+    desc:
+      "Tapeta winylowa o wyczuwalnej strukturze pędzla, która dodaje ścianie głębi i artystycznego charakteru. Często wybierana do nowoczesnych i designerskich wnętrz.",
+    features: [
+      "Wykończenie: matowe",
+      "Struktura: pociągnięcie pędzla",
+      "Gramatura: ok. 360 g/m²",
+      "Podkład: flizelinowy",
+      "100% ekologiczna",
+      "Uniwersalne zastosowanie",
+      "Certyfikat trudnopalności",
+      "Atest higieniczny",
+      "Pasowanie brytów: stykowo",
+      "Maks. szerokość brytu: 100 cm",
+    ],
+    image:
+      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
+  },
+  {
+    id: "samoprzylepna",
+    name: "Fototapeta samoprzylepna",
+    subtitle: "Szybki montaż bez kleju – idealna na gładkie powierzchnie",
+    desc:
+      "Fototapeta z warstwą samoprzylepną, przeznaczona do idealnie gładkich podłoży. Prosty i szybki montaż bez użycia kleju. Nie zaleca się aplikacji na farby lateksowe i zmywalne.",
+    features: [
+      "Wykończenie: matowe",
+      "Struktura: gładka",
+      "Podkład: samoprzylepny",
+      "100% ekologiczna",
+      "Certyfikat trudnopalności",
+      "Atest higieniczny",
+      "Pasowanie brytów: zakładka ± 0,5 cm",
+      "Maks. szerokość brytu: 100 cm",
+    ],
     image:
       "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
   },
@@ -730,12 +813,23 @@ export default function FototapetyProductClient({
             <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
-          {selectedMaterial?.desc ? (
-            <p className="mt-3 text-sm text-white/70 leading-relaxed">
-              {selectedMaterial.desc.length > 160
-                ? selectedMaterial.desc.slice(0, 160) + "…"
-                : selectedMaterial.desc}
-            </p>
+          {/* ✅ Preview inline: título + subtítulo + mini descripción (manteniendo estilo) */}
+          {selectedMaterial ? (
+            <div className="mt-3">
+              {selectedMaterial.subtitle ? (
+                <div className="text-sm text-white/70 leading-snug">
+                  {selectedMaterial.subtitle}
+                </div>
+              ) : null}
+
+              {selectedMaterial.desc ? (
+                <p className="mt-2 text-sm text-white/70 leading-relaxed">
+                  {selectedMaterial.desc.length > 180
+                    ? selectedMaterial.desc.slice(0, 180) + "…"
+                    : selectedMaterial.desc}
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </div>
 
@@ -1003,9 +1097,17 @@ export default function FototapetyProductClient({
                           <div className="text-sm font-semibold text-white/90 leading-snug">
                             {m.name}
                           </div>
-                          <div className="mt-1 text-xs text-white/50">
-                            Kliknij, aby zobaczyć opis
-                          </div>
+
+                          {/* ✅ subtítulo correcto */}
+                          {m.subtitle ? (
+                            <div className="mt-1 text-xs text-white/55 leading-snug">
+                              {m.subtitle}
+                            </div>
+                          ) : (
+                            <div className="mt-1 text-xs text-white/50">
+                              Kliknij, aby zobaczyć opis
+                            </div>
+                          )}
                         </button>
                       );
                     })}
@@ -1053,13 +1155,51 @@ export default function FototapetyProductClient({
                       {selectedMaterial?.name}
                     </div>
 
-                    <div className="mt-1 text-sm text-white/55">
-                      Klej do tapet • maksymalna szerokość brytu 100 cm
+                    {/* ✅ subtítulo arriba del cuerpo */}
+                    {selectedMaterial?.subtitle ? (
+                      <div className="mt-1 text-sm text-white/60">
+                        {selectedMaterial.subtitle}
+                      </div>
+                    ) : null}
+
+                    {/* ✅ línea auxiliar (manteniendo estilo) */}
+                    <div className="mt-2 text-sm text-white/55">
+                      Pasowanie brytów:{" "}
+                      <span className="text-white/70">
+                        {selectedMaterial?.features?.find((f) =>
+                          /Pasowanie brytów/i.test(f)
+                        ) || "—"}
+                      </span>
+                      {" "}
+                      • Maks. szerokość brytu:{" "}
+                      <span className="text-white/70">
+                        {selectedMaterial?.features?.find((f) =>
+                          /Maks\.\s*szerokość brytu/i.test(f)
+                        )
+                          ? "100 cm"
+                          : "100 cm"}
+                      </span>
                     </div>
 
+                    {/* ✅ cuerpo */}
                     <div className="mt-3 text-sm text-white/75 leading-relaxed whitespace-pre-line">
                       {selectedMaterial?.desc || "Brak opisu."}
                     </div>
+
+                    {/* ✅ lista de features */}
+                    {Array.isArray(selectedMaterial?.features) &&
+                    selectedMaterial.features.length ? (
+                      <div className="mt-4">
+                        <div className="text-sm font-semibold text-white/85">
+                          Cechy materiału:
+                        </div>
+                        <ul className="mt-2 space-y-1 text-sm text-white/70 list-disc pl-5">
+                          {selectedMaterial.features.map((f, idx) => (
+                            <li key={`${selectedMaterial.id}-f-${idx}`}>{f}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Footer buttons */}
