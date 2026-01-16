@@ -93,9 +93,9 @@ function buildCleanPriceHtml(raw?: string) {
 type Material = {
   id: string;
   name: string;
-  subtitle: string; // ✅ NUEVO: subtítulo corto (como en tu texto)
-  desc: string; // ✅ mantiene compatibilidad (lo usamos como “cuerpo”)
-  features: string[]; // ✅ NUEVO: lista de “Cechy materiału”
+  subtitle: string; // ✅ subtítulo corto
+  desc: string; // ✅ cuerpo
+  features: string[]; // ✅ lista de “Cechy materiału”
   image?: string;
 };
 
@@ -771,9 +771,7 @@ export default function FototapetyProductClient({
               ariaLabel="Szerokość (cm)"
             />
 
-            <div className="mt-2 text-xs text-white/60">
-              Max: {maxW > 0 ? `${maxW} cm` : "—"}
-            </div>
+            <div className="mt-2 text-xs text-white/60">Max: {maxW > 0 ? `${maxW} cm` : "—"}</div>
           </div>
 
           <div>
@@ -792,9 +790,7 @@ export default function FototapetyProductClient({
               ariaLabel="Wysokość (cm)"
             />
 
-            <div className="mt-2 text-xs text-white/60">
-              Max: {maxH > 0 ? `${maxH} cm` : "—"}
-            </div>
+            <div className="mt-2 text-xs text-white/60">Max: {maxH > 0 ? `${maxH} cm` : "—"}</div>
           </div>
         </div>
 
@@ -807,19 +803,15 @@ export default function FototapetyProductClient({
             onClick={() => setMaterialOpen(true)}
             className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-left hover:border-white/20 transition flex items-center justify-between gap-3"
           >
-            <span className="text-white/90">
-              {selectedMaterial?.name || "Wybierz materiał"}
-            </span>
+            <span className="text-white/90">{selectedMaterial?.name || "Wybierz materiał"}</span>
             <span className="text-white/60 text-sm">Zmień</span>
           </button>
 
-          {/* ✅ Preview inline: título + subtítulo + mini descripción (manteniendo estilo) */}
+          {/* ✅ Preview inline: título + subtítulo + mini descripción */}
           {selectedMaterial ? (
             <div className="mt-3">
               {selectedMaterial.subtitle ? (
-                <div className="text-sm text-white/70 leading-snug">
-                  {selectedMaterial.subtitle}
-                </div>
+                <div className="text-sm text-white/70 leading-snug">{selectedMaterial.subtitle}</div>
               ) : null}
 
               {selectedMaterial.desc ? (
@@ -919,9 +911,7 @@ export default function FototapetyProductClient({
               dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
             />
           ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">
-              {fallbackPrice || ""}
-            </p>
+            <p className="text-lg md:text-xl font-semibold text-white/90">{fallbackPrice || ""}</p>
           )}
         </div>
 
@@ -1043,20 +1033,21 @@ export default function FototapetyProductClient({
         </div>
       </section>
 
-      {/* POPUP MATERIAL — DISEÑO COMO LA IMAGEN */}
+      {/* POPUP MATERIAL — SIEMPRE 2 COLUMNAS (lista izquierda / imagen+desc derecha) */}
       {materialOpen ? (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
           onMouseDown={() => setMaterialOpen(false)}
         >
           <div
-            className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#0b0b0b] shadow-2xl overflow-hidden"
+            className="w-full max-w-4xl rounded-2xl border border-white/10 bg-[#0b0b0b] shadow-2xl overflow-hidden"
+            style={{ maxHeight: "86vh" }}
             onMouseDown={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-start justify-between px-6 py-5 border-b border-white/10">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-white/10">
               <div className="min-w-0">
-                <h3 className="text-xl font-semibold text-white/90 leading-tight">
+                <h3 className="text-lg font-semibold text-white/90 leading-tight">
                   Wybierz materiał
                 </h3>
                 <p className="mt-1 text-sm text-white/60">
@@ -1073,11 +1064,31 @@ export default function FototapetyProductClient({
               </button>
             </div>
 
-            {/* Body */}
-            <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-6 p-6">
-              {/* Left: list */}
-              <div className="space-y-3">
-                <div className="max-h-105 overflow-auto pr-1">
+            {/* Body: ✅ FORZAR SIEMPRE 2 COLUMNAS */}
+            <div
+              className="p-5"
+              style={{
+                maxHeight: "calc(86vh - 70px)",
+              }}
+            >
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "320px 1fr", // ✅ siempre lista izquierda + preview derecha
+                  gap: 20,
+                  height: "100%",
+                }}
+              >
+                {/* Left: list (scroll propio) */}
+                <div
+                  className="space-y-3"
+                  style={{
+                    minWidth: 0,
+                    maxHeight: "calc(86vh - 110px)",
+                    overflow: "auto",
+                    paddingRight: 6,
+                  }}
+                >
                   <div className="space-y-3">
                     {MATERIALS.map((m) => {
                       const isActiveMat = m.id === selectedMaterialId;
@@ -1098,7 +1109,6 @@ export default function FototapetyProductClient({
                             {m.name}
                           </div>
 
-                          {/* ✅ subtítulo correcto */}
                           {m.subtitle ? (
                             <div className="mt-1 text-xs text-white/55 leading-snug">
                               {m.subtitle}
@@ -1113,114 +1123,112 @@ export default function FototapetyProductClient({
                     })}
                   </div>
                 </div>
-              </div>
 
-              {/* Right: preview */}
-              <div className="min-w-0">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                  {/* Image preview */}
-                  <div className="relative rounded-xl border border-white/10 bg-black/30 overflow-hidden">
-                    <div style={{ aspectRatio: "16 / 9" }}>
-                      {selectedMaterial?.image ? (
-                        <img
-                          src={selectedMaterial.image}
-                          alt={selectedMaterial.name}
-                          className="h-full w-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="h-full w-full grid place-items-center text-white/50 text-sm">
-                          Brak zdjęcia
-                        </div>
-                      )}
+                {/* Right: preview (scroll vertical para TODA la info) */}
+                <div className="min-w-0">
+                  <div
+                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    style={{
+                      maxHeight: "calc(86vh - 110px)",
+                      overflowY: "auto", // ✅ scroll vertical aquí
+                      overflowX: "hidden",
+                    }}
+                  >
+                    {/* Image preview (tamaño correcto) */}
+                    <div className="relative rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+                      <div
+                        style={{
+                          aspectRatio: "16 / 9",
+                          maxHeight: 260,
+                          height: "auto",
+                        }}
+                      >
+                        {selectedMaterial?.image ? (
+                          <img
+                            src={selectedMaterial.image}
+                            alt={selectedMaterial.name}
+                            className="h-full w-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="h-full w-full grid place-items-center text-white/50 text-sm">
+                            Brak zdjęcia
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Lupa abajo-derecha */}
+                      <div className="absolute bottom-3 right-3">
+                        <button
+                          type="button"
+                          className="h-9 w-9 rounded-full bg-black/55 border border-white/15 text-white/80 hover:bg-black/70 transition grid place-items-center"
+                          aria-label="Powiększ podgląd"
+                          title="Powiększ"
+                          onClick={() => {}}
+                        >
+                          <IconSearchPlus />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Lupa abajo-derecha */}
-                    <div className="absolute bottom-3 right-3">
+                    {/* Texts */}
+                    <div className="mt-4">
+                      <div className="text-lg font-semibold text-white/90 leading-tight">
+                        {selectedMaterial?.name}
+                      </div>
+
+                      {selectedMaterial?.subtitle ? (
+                        <div className="mt-1 text-sm text-white/60">{selectedMaterial.subtitle}</div>
+                      ) : null}
+
+                      <div className="mt-2 text-sm text-white/55">
+                        Pasowanie brytów:{" "}
+                        <span className="text-white/70">
+                          {selectedMaterial?.features?.find((f) =>
+                            /Pasowanie brytów/i.test(f)
+                          ) || "—"}
+                        </span>{" "}
+                        • Maks. szerokość brytu: <span className="text-white/70">100 cm</span>
+                      </div>
+
+                      <div className="mt-3 text-sm text-white/75 leading-relaxed whitespace-pre-line">
+                        {selectedMaterial?.desc || "Brak opisu."}
+                      </div>
+
+                      {Array.isArray(selectedMaterial?.features) &&
+                      selectedMaterial.features.length ? (
+                        <div className="mt-4">
+                          <div className="text-sm font-semibold text-white/85">Cechy materiału:</div>
+                          <ul className="mt-2 space-y-1 text-sm text-white/70 list-disc pl-5">
+                            {selectedMaterial.features.map((f, idx) => (
+                              <li key={`${selectedMaterial.id}-f-${idx}`}>{f}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    {/* Footer buttons (sticky visual dentro del scroll) */}
+                    <div className="mt-5 flex items-center justify-end gap-3">
                       <button
                         type="button"
-                        className="h-9 w-9 rounded-full bg-black/55 border border-white/15 text-white/80 hover:bg-black/70 transition grid place-items-center"
-                        aria-label="Powiększ podgląd"
-                        title="Powiększ"
-                        onClick={() => {}}
+                        onClick={() => setMaterialOpen(false)}
+                        className="rounded-2xl px-6 py-3 bg-white/10 border border-white/15 text-white/85 hover:bg-white/15 transition"
                       >
-                        <IconSearchPlus />
+                        Anuluj
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMaterialOpen(false)}
+                        className="rounded-2xl px-6 py-3 bg-[#c9b086] text-black font-semibold hover:opacity-90 transition shadow"
+                      >
+                        Wybierz
                       </button>
                     </div>
                   </div>
-
-                  {/* Texts */}
-                  <div className="mt-4">
-                    <div className="text-xl font-semibold text-white/90 leading-tight">
-                      {selectedMaterial?.name}
-                    </div>
-
-                    {/* ✅ subtítulo arriba del cuerpo */}
-                    {selectedMaterial?.subtitle ? (
-                      <div className="mt-1 text-sm text-white/60">
-                        {selectedMaterial.subtitle}
-                      </div>
-                    ) : null}
-
-                    {/* ✅ línea auxiliar (manteniendo estilo) */}
-                    <div className="mt-2 text-sm text-white/55">
-                      Pasowanie brytów:{" "}
-                      <span className="text-white/70">
-                        {selectedMaterial?.features?.find((f) =>
-                          /Pasowanie brytów/i.test(f)
-                        ) || "—"}
-                      </span>
-                      {" "}
-                      • Maks. szerokość brytu:{" "}
-                      <span className="text-white/70">
-                        {selectedMaterial?.features?.find((f) =>
-                          /Maks\.\s*szerokość brytu/i.test(f)
-                        )
-                          ? "100 cm"
-                          : "100 cm"}
-                      </span>
-                    </div>
-
-                    {/* ✅ cuerpo */}
-                    <div className="mt-3 text-sm text-white/75 leading-relaxed whitespace-pre-line">
-                      {selectedMaterial?.desc || "Brak opisu."}
-                    </div>
-
-                    {/* ✅ lista de features */}
-                    {Array.isArray(selectedMaterial?.features) &&
-                    selectedMaterial.features.length ? (
-                      <div className="mt-4">
-                        <div className="text-sm font-semibold text-white/85">
-                          Cechy materiału:
-                        </div>
-                        <ul className="mt-2 space-y-1 text-sm text-white/70 list-disc pl-5">
-                          {selectedMaterial.features.map((f, idx) => (
-                            <li key={`${selectedMaterial.id}-f-${idx}`}>{f}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Footer buttons */}
-                  <div className="mt-6 flex items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setMaterialOpen(false)}
-                      className="rounded-2xl px-6 py-3 bg-white/10 border border-white/15 text-white/85 hover:bg-white/15 transition"
-                    >
-                      Anuluj
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setMaterialOpen(false)}
-                      className="rounded-2xl px-6 py-3 bg-[#c9b086] text-black font-semibold hover:opacity-90 transition shadow"
-                    >
-                      Wybierz
-                    </button>
-                  </div>
                 </div>
+                {/* /Right */}
               </div>
             </div>
             {/* /Body */}
