@@ -1,20 +1,19 @@
 "use client";
 
 // components/ulubione/UlubioneModal.tsx
-// Modal "Lista życzeń (N)" estilo Woo (según capturas).
-// - Se apoya en UlubioneProvider (useUlubione)
+// Modal "Lista życzeń (N)" estilo Woo.
+// ✅ Adaptado al nuevo theme: fondo blanco + texto negro + dorado (#c9b086)
 // - Cierra con ESC, click afuera y botón "X"
 // - Botones: "OTWÓRZ STRONĘ LISTY ŻYCZEŃ" (va a /ulubione) y "KONTYNUUJ ZAKUPY" (cierra)
 // - Muestra último agregado (lastAdded) y contador total
-// - Respeta HTML de precio (priceHtml) si existe
-// ✅ FIX: Footer responsive con gap para que los links nunca queden "pegados" (especialmente en Plakaty)
+// - Respeta HTML de precio (priceHtml)
+// ✅ Footer responsive con gap (no quedan pegados)
 
 import React, { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useUlubione } from "./UlubioneProvider";
 
 function formatPlDate(iso: string): string {
-  // Formato similar a Woo: "15 stycznia, 2026"
   try {
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return iso;
@@ -63,15 +62,15 @@ export default function UlubioneModal() {
       <button
         type="button"
         aria-label="Close overlay"
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/55"
         onClick={closeModal}
       />
 
       {/* Modal */}
-      <div className="relative w-[92vw] max-w-170 overflow-hidden rounded-md border border-black/30 bg-white shadow-2xl">
-        {/* Header negro */}
-        <div className="flex items-center justify-between bg-[#111] px-4 py-3">
-          <div className="text-sm font-semibold text-white">
+      <div className="relative w-[92vw] max-w-170 overflow-hidden rounded-2xl border border-black/10 bg-white shadow-2xl">
+        {/* Header (blanco) */}
+        <div className="flex items-center justify-between border-b border-black/10 px-4 py-3">
+          <div className="text-sm font-semibold text-black">
             Lista życzeń ({count})
           </div>
 
@@ -79,9 +78,9 @@ export default function UlubioneModal() {
             type="button"
             onClick={closeModal}
             aria-label="Close"
-            className="grid h-8 w-8 place-items-center rounded hover:bg-white/10 transition"
+            className="grid h-9 w-9 place-items-center rounded-xl border border-black/10 bg-white text-black hover:bg-black/5 transition"
           >
-            <span className="text-white text-lg leading-none">×</span>
+            <span className="text-lg leading-none">×</span>
           </button>
         </div>
 
@@ -92,17 +91,18 @@ export default function UlubioneModal() {
             <button
               type="button"
               aria-label="Remove"
-              className="mt-2 text-black/70 hover:text-black transition"
+              className="mt-2 text-black/60 hover:text-black transition"
               onClick={() => {
                 if (item?.id) remove(item.id);
               }}
+              title="Usuń"
             >
               ×
             </button>
 
             {/* Miniatura (opcional) */}
             {item?.image ? (
-              <div className="h-16 w-16 overflow-hidden rounded border border-black/10 bg-white">
+              <div className="h-16 w-16 overflow-hidden rounded-xl border border-black/10 bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.image}
@@ -119,8 +119,8 @@ export default function UlubioneModal() {
                 {item?.name || "Produkt"}
               </div>
 
-              {/* Precio ✅ dorado para que se lea en fondos oscuros (Plakaty, etc.) */}
-              <div className="mt-1 text-sm text-[#c9b086]">
+              {/* Precio (negro, con acento dorado) */}
+              <div className="mt-1 text-sm text-black">
                 {item?.priceHtml ? (
                   <span
                     className="wishlist-price-html"
@@ -129,15 +129,15 @@ export default function UlubioneModal() {
                 ) : null}
               </div>
 
-              {/* Fecha ✅ dorado suave */}
+              {/* Fecha */}
               {addedDate ? (
-                <div className="mt-2 text-sm text-[#c9b086]/80">{addedDate}</div>
+                <div className="mt-2 text-xs text-black/60">{addedDate}</div>
               ) : null}
             </div>
           </div>
         </div>
 
-        {/* Footer (links) ✅ FIX spacing + responsive */}
+        {/* Footer (links) */}
         <div className="border-t border-black/10 px-4 py-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Link
@@ -159,7 +159,7 @@ export default function UlubioneModal() {
         </div>
       </div>
 
-      {/* Ajustes mínimos para que del/ins se vean como Woo */}
+      {/* Ajustes mínimos para que del/ins se vean bien */}
       <style jsx global>{`
         .wishlist-price-html del {
           opacity: 0.55;

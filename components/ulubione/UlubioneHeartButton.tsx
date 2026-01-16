@@ -3,8 +3,8 @@
 // components/ulubione/UlubioneHeartButton.tsx
 // Botón corazón (icon-only) para agregar/quitar producto de "Ulubione".
 // - Abre el modal global al agregar (comportamiento tipo Woo).
-// - Mantiene estilo consistente con tu UI (botón contorno, hover, etc.)
 // - Evita Hydration mismatch: no calcula "active" hasta hidratar.
+// - ✅ Optimizado para theme CLARO (blanco/negro) + dorado.
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useUlubione } from "@/components/ulubione/UlubioneProvider";
@@ -19,7 +19,6 @@ type Props = {
 };
 
 function HeartIcon({ filled }: { filled: boolean }) {
-  // SVG simple (sin dependencias)
   return (
     <svg
       viewBox="0 0 24 24"
@@ -44,14 +43,13 @@ export default function UlubioneHeartButton({
 }: Props) {
   const { has, toggle } = useUlubione();
 
-  // ✅ Evita mismatch: hasta hidratar, renderizamos SIEMPRE el estado "no activo"
+  // ✅ Evita mismatch: hasta hidratar, renderizamos SIEMPRE "no activo"
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     setHydrated(true);
   }, []);
 
-  // ✅ Solo calculamos active cuando ya estamos hidratados
   const active = useMemo(() => {
     if (!hydrated) return false;
     return has(id);
@@ -62,9 +60,10 @@ export default function UlubioneHeartButton({
       type="button"
       className={[
         "inline-flex items-center justify-center",
-        "rounded-2xl border border-white/15 bg-white/5 text-white font-semibold",
-        "px-5 py-3 hover:bg-white/10 transition",
-        "min-w-14",
+        "rounded-2xl border border-black/10 bg-white text-black",
+        "hover:bg-black/5 transition shadow-sm",
+        "px-4 py-3 min-w-14",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c9b086]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white",
         className || "",
       ].join(" ")}
       aria-label={active ? "Usuń z ulubionych" : "Dodaj do ulubionych"}
@@ -73,7 +72,17 @@ export default function UlubioneHeartButton({
         toggle({ id, slug, name, image, priceHtml });
       }}
     >
-      <span className={active ? "text-[#c9b086]" : "text-white"}>
+      {/* ✅ Icono visible en theme claro:
+          - Inactivo: negro (con hover dorado)
+          - Activo: dorado sólido */}
+      <span
+        className={[
+          "inline-flex",
+          active
+            ? "text-[#c9b086]"
+            : "text-black hover:text-[#c9b086] transition-colors",
+        ].join(" ")}
+      >
         <HeartIcon filled={active} />
       </span>
     </button>
