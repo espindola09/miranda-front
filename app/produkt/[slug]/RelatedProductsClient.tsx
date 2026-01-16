@@ -18,8 +18,6 @@ function stripHtml(html: string) {
 }
 
 function pickPrice(p: WooProduct) {
-  // Si querés renderizar HTML de Woo, mantené price_html.
-  // Para grilla simple: usamos "price" si existe.
   if (p.price) return `${p.price} zł`;
 
   const ph = String(p.price_html || "");
@@ -34,9 +32,11 @@ export default function RelatedProductsClient({
 }) {
   if (!Array.isArray(products) || products.length === 0) {
     return (
-      <section className="mt-12 border-t border-white/10 pt-10">
-        <h2 className="text-2xl font-bold text-white/90">Polecane produkty</h2>
-        <p className="mt-3 text-sm text-white/60">
+      <section className="mt-14 border-t border-black/10 pt-10">
+        <h2 className="text-xl md:text-2xl font-semibold text-black">
+          Polecane produkty
+        </h2>
+        <p className="mt-3 text-sm text-black/60">
           Brak produktów powiązanych do wyświetlenia.
         </p>
       </section>
@@ -44,8 +44,10 @@ export default function RelatedProductsClient({
   }
 
   return (
-    <section className="mt-12 border-t border-white/10 pt-10">
-      <h2 className="text-2xl font-bold text-white/90">Polecane produkty</h2>
+    <section className="mt-14 border-t border-black/10 pt-10">
+      <h2 className="text-xl md:text-2xl font-semibold text-black">
+        Polecane produkty
+      </h2>
 
       <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         {products.map((p) => {
@@ -56,31 +58,44 @@ export default function RelatedProductsClient({
             <Link
               key={p.id}
               href={`/produkt/${p.slug}`}
-              className="group rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-white/20 transition"
               title={p.name}
+              className="
+                group rounded-2xl border border-black/10 bg-white
+                overflow-hidden transition
+                hover:border-[#c9b086]
+                hover:shadow-md
+              "
             >
-              <div className="aspect-square bg-black/40 overflow-hidden">
+              {/* Imagen */}
+              <div className="aspect-square bg-black/5 overflow-hidden">
                 {img ? (
                   <img
                     src={img}
                     alt={p.images?.[0]?.alt || p.name}
-                    className="h-full w-full object-cover group-hover:scale-[1.02] transition"
+                    className="
+                      h-full w-full object-cover
+                      transition-transform duration-300
+                      group-hover:scale-[1.04]
+                    "
                     loading="lazy"
                   />
                 ) : (
-                  <div className="h-full w-full grid place-items-center text-white/40 text-sm">
+                  <div className="h-full w-full grid place-items-center text-black/40 text-sm">
                     No image
                   </div>
                 )}
               </div>
 
+              {/* Info */}
               <div className="p-3">
-                <div className="text-sm font-semibold text-white/90 leading-snug line-clamp-2">
+                <div className="text-sm font-semibold text-black leading-snug line-clamp-2">
                   {p.name}
                 </div>
 
                 {priceText ? (
-                  <div className="mt-2 text-sm text-white/80">{priceText}</div>
+                  <div className="mt-2 text-sm font-medium text-black/80">
+                    {priceText}
+                  </div>
                 ) : null}
               </div>
             </Link>

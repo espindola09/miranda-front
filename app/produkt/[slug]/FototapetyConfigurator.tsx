@@ -80,26 +80,26 @@ function StepperInput({
           if (Number.isFinite(n)) onChange(n);
         }}
         onBlur={onBlur}
-        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 pr-12 outline-none focus:border-white/20"
+        className="w-full rounded-xl bg-white border border-black/15 px-4 py-3 pr-12 outline-none text-black placeholder:text-black/40 focus:border-[#c9b086]"
         placeholder={placeholder}
         aria-label={ariaLabel}
       />
 
-      {/* Flechas estilo spinner (como la 2da imagen) */}
-      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-md border border-white/10 bg-white/5">
+      {/* Flechas estilo spinner */}
+      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex flex-col overflow-hidden rounded-md border border-black/15 bg-white">
         <button
           type="button"
           aria-label="Increase"
-          className="h-5 w-7 grid place-items-center text-white/70 hover:text-white hover:bg-white/10 transition"
+          className="h-5 w-7 grid place-items-center text-black/70 hover:text-black hover:bg-black/5 transition"
           onClick={() => setClamped(safeValue + 1)}
         >
           <span className="text-[10px] leading-none">▲</span>
         </button>
-        <div className="h-px bg-white/10" />
+        <div className="h-px bg-black/10" />
         <button
           type="button"
           aria-label="Decrease"
-          className="h-5 w-7 grid place-items-center text-white/70 hover:text-white hover:bg-white/10 transition"
+          className="h-5 w-7 grid place-items-center text-black/70 hover:text-black hover:bg-black/5 transition"
           onClick={() => setClamped(safeValue - 1)}
         >
           <span className="text-[10px] leading-none">▼</span>
@@ -187,8 +187,14 @@ export default function FototapetyConfigurator({
   );
 
   const panels = useMemo(() => {
+    // ✅ PROTECCIÓN: maxPanelWidthCm puede venir undefined/0
+    const safeMaxPanel =
+      Number.isFinite(maxPanelWidthCm) && maxPanelWidthCm > 0
+        ? maxPanelWidthCm
+        : 100;
+
     // cantidad de paneles: ceil(width / maxPanelWidth)
-    const panelCount = Math.max(1, Math.ceil(wClamped / maxPanelWidthCm));
+    const panelCount = Math.max(1, Math.ceil(wClamped / safeMaxPanel));
     // ancho del panel redondeado (como tu ejemplo)
     const panelWidth = Math.round(wClamped / panelCount);
     return { panelCount, panelWidth };
@@ -211,13 +217,15 @@ export default function FototapetyConfigurator({
     });
   };
 
-  // Importante: orden estable de transforms para evitar “saltos”
-  const transform = `scaleX(${flipX ? -1 : 1}) scaleY(${flipY ? -1 : 1}) scale(${zoom})`;
+  // ✅ Unificamos orden para que sea estable y predecible
+  const transform = `scale(${zoom}) scaleX(${flipX ? -1 : 1}) scaleY(${
+    flipY ? -1 : 1
+  })`;
 
   return (
     <div>
       {/* IMAGEN PRINCIPAL */}
-      <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
+      <div className="rounded-2xl border border-black/10 bg-white overflow-hidden shadow-lg">
         {active ? (
           // ✅ Viewport: imagen + overlay dentro, controles afuera
           <div className="relative w-full overflow-hidden">
@@ -242,7 +250,7 @@ export default function FototapetyConfigurator({
             </div>
           </div>
         ) : (
-          <div className="p-14 text-white/50">No image</div>
+          <div className="p-14 text-black/50">No image</div>
         )}
       </div>
 
@@ -282,7 +290,7 @@ export default function FototapetyConfigurator({
           <button
             type="button"
             onClick={onReset}
-            className="h-9 rounded-md px-3 bg-white/10 border border-white/15 text-white hover:bg-white/15 transition shadow"
+            className="h-9 rounded-md px-3 bg-white border border-black/15 text-black hover:bg-black/5 transition shadow"
           >
             Reset
           </button>
@@ -300,8 +308,8 @@ export default function FototapetyConfigurator({
                 type="button"
                 onClick={() => setActiveIdx(idx)}
                 className={[
-                  "rounded-xl overflow-hidden border bg-white/5",
-                  isActive ? "border-[#c9b086]" : "border-white/10",
+                  "rounded-xl overflow-hidden border bg-white",
+                  isActive ? "border-[#c9b086]" : "border-black/10",
                 ].join(" ")}
                 title={img.alt || productName}
               >
@@ -318,11 +326,11 @@ export default function FototapetyConfigurator({
       ) : null}
 
       {/* BARRA INFO (Powierzchnia/Wymiary/Bryty) */}
-      <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
+      <div className="mt-4 rounded-xl bg-black/5 border border-black/10 px-4 py-3 text-sm text-black/90">
         <span className="font-semibold">Powierzchnia:</span>{" "}
-        {areaM2.toFixed(2)} m² <span className="text-white/40">|</span>{" "}
+        {areaM2.toFixed(2)} m² <span className="text-black/40">|</span>{" "}
         <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
-        <span className="text-white/40">|</span>{" "}
+        <span className="text-black/40">|</span>{" "}
         <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
         {panels.panelWidth} cm
       </div>
@@ -330,8 +338,8 @@ export default function FototapetyConfigurator({
       {/* INPUTS */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm text-white/80 mb-2">
-            Szerokość (cm) <span className="text-red-400">*</span>
+          <label className="block text-sm text-black/80 mb-2">
+            Szerokość (cm) <span className="text-red-500">*</span>
           </label>
 
           <StepperInput
@@ -344,14 +352,14 @@ export default function FototapetyConfigurator({
             ariaLabel="Szerokość (cm)"
           />
 
-          <div className="mt-2 text-xs text-white/60">
+          <div className="mt-2 text-xs text-black/60">
             Max: {maxW > 0 ? `${maxW} cm` : "—"}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm text-white/80 mb-2">
-            Wysokość (cm) <span className="text-red-400">*</span>
+          <label className="block text-sm text-black/80 mb-2">
+            Wysokość (cm) <span className="text-red-500">*</span>
           </label>
 
           <StepperInput
@@ -364,7 +372,7 @@ export default function FototapetyConfigurator({
             ariaLabel="Wysokość (cm)"
           />
 
-          <div className="mt-2 text-xs text-white/60">
+          <div className="mt-2 text-xs text-black/60">
             Max: {maxH > 0 ? `${maxH} cm` : "—"}
           </div>
         </div>

@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
+/* ===============================
+   VARIABLES GLOBALES (THEME)
+================================ */
 :root {
+  /* Base */
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
+
+  /* Brand */
+  --brand: #c9b086;
+
+  /* UI */
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --card: #ffffff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ===============================
+   BASE GLOBAL
+================================ */
+html,
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===============================
+   ELEMENTOS BASE
+================================ */
+a {
+  color: var(--foreground);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--brand);
+}
+
+input,
+select,
+textarea {
+  background: #ffffff;
+  color: var(--foreground);
+  border: 1px solid var(--border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+}
+
+/* ===============================
+   CLASES UTILITARIAS DE SISTEMA
+================================ */
+.text-brand {
+  color: var(--brand);
+}
+
+.text-muted {
+  color: var(--muted);
+}
+
+.bg-card {
+  background: var(--card);
+}
+
+.border-default {
+  border-color: var(--border);
 }

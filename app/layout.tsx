@@ -30,7 +30,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl" suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={[
+          geistSans.variable,
+          geistMono.variable,
+          "antialiased",
+          // ✅ FORZAR THEME GLOBAL (blanco/negro) para TODAS las páginas
+          "min-h-screen bg-white text-black",
+        ].join(" ")}
+      >
         {/* ✅ Provider global para que el corazón funcione en TODA la app */}
         <UlubioneProvider>
           {children}

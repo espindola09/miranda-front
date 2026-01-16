@@ -38,10 +38,6 @@ function uniqueCategoryNames(product: any): string[] {
 
 /**
  * ✅ MISMO "limpiador" de precio que usás en FototapetyProductClient / SampleClient.
- * Deja SOLO:
- * - <del> + <ins> cuando hay rebaja
- * - o el <span class="amount"> / <bdi> si no hay rebaja
- * - elimina textos extra tipo "Pierwotna cena wynosi..."
  */
 function buildCleanPriceHtml(raw?: string) {
   if (!raw) return "";
@@ -72,23 +68,15 @@ function buildCleanPriceHtml(raw?: string) {
   return "";
 }
 
-// ✅ Leyendas fijas pedidas (incrustadas en el código)
 const FIXED_MATERIALS_TEXT =
   "dostępne materiały: Flizelinowa Gładka 170g, Flizelinowa Gładka PREMIUM 220g, Winyl na flizelinie beton, Winylowa na flizelinie strukturalna 360g, Samoprzylepna, Winylowa na flizelinie strukturalna BRUSH 360g";
 
 const FIXED_PANELS_NOTE_TEXT =
   "Ilość brytów jest orientacyjna. Jeśli potrzebujesz konkretnej szerokości, podaj to w uwagach. Inaczej fototapeta może być podzielona inaczej.\nPamiętaj! Jest to produkt indywidualny i warto dodać do potrzebnego wymiaru 3cm zapasu.";
 
-/**
- * Construye filas para "Informacje dodatkowe" (SOLO Fototapety).
- * - Prioridad: product.attributes (aunque visible venga false).
- * - Fallback: dimensiones (si existen).
- * - Inserta leyendas fijas debajo de “Wymiary maksymalne”.
- */
 function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
   const rows: AdditionalInfoRow[] = [];
 
-  // 1) Atributos Woo
   const attrs = Array.isArray(product?.attributes) ? product.attributes : [];
   for (const a of attrs) {
     const label = String(a?.name || "").trim();
@@ -97,11 +85,9 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
       .map((x: any) => String(x || "").trim())
       .filter(Boolean)
       .join(", ");
-
     if (label && value) rows.push({ label, value });
   }
 
-  // 2) Dimensiones
   const dimW = String(product?.dimensions?.width || "").trim();
   const dimH = String(product?.dimensions?.height || "").trim();
 
@@ -119,7 +105,6 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
     }
   }
 
-  // 3) Leyendas fijas debajo de “Wymiary maksymalne”
   const hasMaterialRow = rows.some((r) =>
     String(r.label || "").toLowerCase().includes("mater")
   );
@@ -148,7 +133,6 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
     rows.splice(insertAt + 1, 0, { label: "", value: FIXED_PANELS_NOTE_TEXT });
   }
 
-  // 4) Deduplicación por label (nota con label vacío se conserva)
   const seen = new Set<string>();
   const unique: AdditionalInfoRow[] = [];
   for (const r of rows) {
@@ -161,11 +145,6 @@ function buildAdditionalInfoRows(product: any): AdditionalInfoRow[] {
   return unique;
 }
 
-/**
- * ✅ Extrae el texto de “Średnia cena…” desde el BACK (meta_data).
- * - Soporta varias keys comunes; cuando confirmes la key exacta, la dejamos fija.
- * - Devuelve string vacío si no viene.
- */
 function getAvgPrice30DaysText(product: any): string {
   const meta = Array.isArray(product?.meta_data) ? product.meta_data : [];
   if (!meta.length) return "";
@@ -185,7 +164,6 @@ function getAvgPrice30DaysText(product: any): string {
     "_omnibus_price_30_days",
   ]);
 
-  // 1) match directo por key preferida
   for (const m of meta) {
     const k = String(m?.key || "").trim();
     if (!k) continue;
@@ -196,7 +174,6 @@ function getAvgPrice30DaysText(product: any): string {
     }
   }
 
-  // 2) fallback: si existe una key que contenga omnibus + 30
   for (const m of meta) {
     const k = String(m?.key || "").toLowerCase();
     if (!k) continue;
@@ -211,38 +188,23 @@ function getAvgPrice30DaysText(product: any): string {
   return "";
 }
 
-/**
- * Base64 compatible (Node/Edge).
- * En Node: Buffer.
- * En Edge: btoa (si existiera) o fallback seguro.
- */
 function toBase64(input: string): string {
-  // Node
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const B: any = (globalThis as any)?.Buffer;
   if (B?.from) return B.from(input, "utf-8").toString("base64");
 
-  // Edge / browser-like
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const btoaFn: any = (globalThis as any)?.btoa;
   if (typeof btoaFn === "function") {
-    // btoa no soporta unicode directo; convertimos a latin1-safe
     const bytes = new TextEncoder().encode(input);
     let bin = "";
     bytes.forEach((b) => (bin += String.fromCharCode(b)));
     return btoaFn(bin);
   }
 
-  // Último recurso (muy raro llegar acá)
   return "";
 }
 
-/**
- * ✅ Related products (server-side)
- * - Primero intenta product.related_ids (Woo).
- * - Si no hay, fallback por categoría.
- * - WC REST v3 con Basic Auth vía env vars.
- */
 async function fetchRelatedProducts(product: any) {
   try {
     const baseRaw =
@@ -276,12 +238,10 @@ async function fetchRelatedProducts(product: any) {
 
     const commonHeaders = {
       Authorization: `Basic ${auth}`,
-      // algunos WAFs/CDNs se ponen “quisquillosos” sin UA
       "User-Agent": "Vercel-NextJS",
       Accept: "application/json",
     };
 
-    // 1) related_ids
     if (relatedIds.length > 0) {
       const url =
         `${base}/wp-json/wc/v3/products?` +
@@ -301,7 +261,6 @@ async function fetchRelatedProducts(product: any) {
       }
     }
 
-    // 2) fallback por categoría (primera categoría)
     const catId = Number(product?.categories?.[0]?.id || 0);
     if (catId > 0) {
       const url =
@@ -331,8 +290,8 @@ function RelatedProductsSection({ products }: { products: any[] }) {
   if (!Array.isArray(products) || products.length === 0) return null;
 
   return (
-    <section className="mt-12 border-t border-white/10 pt-8">
-      <h2 className="text-lg md:text-xl font-semibold text-white/90 mb-5">
+    <section className="mt-12 border-t border-black/10 pt-8">
+      <h2 className="text-lg md:text-xl font-semibold text-black mb-5">
         Polecane produkty
       </h2>
 
@@ -349,9 +308,9 @@ function RelatedProductsSection({ products }: { products: any[] }) {
             <Link
               key={p?.id ?? slug}
               href={`/produkt/${encodeURIComponent(slug)}`}
-              className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden hover:bg-white/10 transition"
+              className="rounded-2xl border border-black/10 bg-white overflow-hidden hover:shadow-md transition"
             >
-              <div className="bg-black/40" style={{ aspectRatio: "4 / 3" }}>
+              <div className="bg-black/5" style={{ aspectRatio: "4 / 3" }}>
                 {img ? (
                   <img
                     src={img}
@@ -363,11 +322,11 @@ function RelatedProductsSection({ products }: { products: any[] }) {
               </div>
 
               <div className="p-3">
-                <div className="text-sm font-semibold text-white/90 line-clamp-2">
+                <div className="text-sm font-semibold text-black line-clamp-2">
                   {name}
                 </div>
 
-                <div className="mt-2 text-sm text-white/80">
+                <div className="mt-2 text-sm text-black/80">
                   {clean ? (
                     <span dangerouslySetInnerHTML={{ __html: clean }} />
                   ) : priceHtml ? (
@@ -397,7 +356,6 @@ export default async function ProductPage({
   const { slug } = await params;
   const sp = (searchParams ? await searchParams : undefined) || {};
 
-  // Para la página de "Próbka": recibimos el SKU del producto origen por querystring
   const refSku = pickFirstString(sp.ref_sku);
 
   const product = await getProductBySlug(slug);
@@ -407,7 +365,7 @@ export default async function ProductPage({
   const mainImageUrl = images?.[0]?.src || "";
 
   const priceHtml = (product as any)?.price_html as string | undefined;
-  const cleanPriceHtml = buildCleanPriceHtml(priceHtml); // ✅ NUEVO (unifica formato)
+  const cleanPriceHtml = buildCleanPriceHtml(priceHtml);
   const fallbackPrice = product?.price ? `${product.price} zł` : "";
 
   const skuText = String(product?.sku || "");
@@ -415,35 +373,31 @@ export default async function ProductPage({
 
   const isFototapety = isFototapetyProduct(product);
 
-  // ✅ Informacje dodatkowe SOLO para Fototapety
   const additionalInfo: AdditionalInfoRow[] = isFototapety
     ? buildAdditionalInfoRows(product)
     : [];
 
-  // ✅ AVG 30 días desde el back (meta)
   const avgPrice30DaysText = getAvgPrice30DaysText(product);
 
-  // ✅ Related products SIEMPRE
   const relatedProducts = await fetchRelatedProducts(product);
 
-  // ✅ ULUBIONE (para botón corazón)
   const productId = Number(product?.id || 0);
   const productSlug = String(product?.slug || slug || "");
   const productName = String(product?.name || "");
   const productImg = Array.isArray(product?.images)
     ? String(product?.images?.[0]?.src || "")
     : "";
-  const productPriceHtml = cleanPriceHtml || String((product as any)?.price_html || ""); // ✅ NUEVO
+  const productPriceHtml =
+    cleanPriceHtml || String((product as any)?.price_html || "");
 
-  // ✅ Caso especial: producto de prueba
   if (slug === "probka-fototapety") {
     return (
-      <main className="min-h-screen bg-black text-white">
+      <main className="min-h-screen bg-white text-black">
         <div className="mx-auto w-full max-w-6xl px-6 py-10">
-          <div className="mb-6 text-sm text-white/60">
-            <span className="hover:text-white/80 cursor-pointer">Home</span>
-            <span className="mx-2">/</span>
-            <span className="text-white/80">Produkt</span>
+          <div className="mb-6 text-sm text-black/70">
+            <span className="hover:text-[#c9b086] cursor-pointer">Home</span>
+            <span className="mx-2 text-black/40">/</span>
+            <span className="text-black/80">Produkt</span>
           </div>
 
           <FototapetySampleClient
@@ -469,20 +423,18 @@ export default async function ProductPage({
   const maxHeightCm = Number((product as any)?.dimensions?.height || 0);
 
   return (
-    <main className="min-h-screen bg-black text-white">
+    <main className="min-h-screen bg-white text-black">
       <div className="mx-auto w-full max-w-6xl px-6 py-10">
-        <div className="mb-6 text-sm text-white/60">
-          <span className="hover:text-white/80 cursor-pointer">Home</span>
-          <span className="mx-2">/</span>
-          <span className="text-white/80">Produkt</span>
+        <div className="mb-6 text-sm text-black/70">
+          <span className="hover:text-[#c9b086] cursor-pointer">Home</span>
+          <span className="mx-2 text-black/40">/</span>
+          <span className="text-black/80">Produkt</span>
         </div>
 
         {isFototapety ? (
           <FototapetyProductClient
-            /* ✅ ULUBIONE: necesarias para que aparezca el corazón */
             productId={productId}
             productSlug={productSlug}
-            /* -------------------------------------------------- */
             productName={product.name}
             images={images}
             maxWidthCm={Number.isFinite(maxWidthCm) ? maxWidthCm : 0}
@@ -503,9 +455,8 @@ export default async function ProductPage({
           />
         ) : (
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-            {/* IZQUIERDA */}
             <section className="self-start">
-              <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
+              <div className="rounded-2xl border border-black/10 bg-white overflow-hidden shadow-lg">
                 {mainImageUrl ? (
                   <img
                     src={mainImageUrl}
@@ -514,7 +465,7 @@ export default async function ProductPage({
                     loading="eager"
                   />
                 ) : (
-                  <div className="p-14 text-white/50">No image</div>
+                  <div className="p-14 text-black/60">No image</div>
                 )}
               </div>
 
@@ -523,7 +474,7 @@ export default async function ProductPage({
                   {images.slice(0, 5).map((img: any, idx: number) => (
                     <div
                       key={img.id ?? `${img.src}-${idx}`}
-                      className="rounded-xl border border-white/10 bg-white/5 overflow-hidden"
+                      className="rounded-xl border border-black/10 bg-white overflow-hidden"
                       title={img.alt || product.name}
                     >
                       <img
@@ -538,34 +489,33 @@ export default async function ProductPage({
               ) : null}
             </section>
 
-            {/* DERECHA */}
             <section className="min-w-0">
-              <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+              <h1 className="text-3xl md:text-4xl font-bold leading-tight text-black">
                 {product.name}
               </h1>
 
               <div className="mt-3">
                 {cleanPriceHtml ? (
                   <div
-                    className="text-xl md:text-2xl font-semibold text-white/90"
+                    className="text-xl md:text-2xl font-semibold text-black"
                     dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
                   />
                 ) : priceHtml ? (
                   <div
-                    className="text-xl md:text-2xl font-semibold text-white/90"
+                    className="text-xl md:text-2xl font-semibold text-black"
                     dangerouslySetInnerHTML={{ __html: priceHtml }}
                   />
                 ) : (
-                  <p className="text-xl md:text-2xl font-semibold text-white/90">
+                  <p className="text-xl md:text-2xl font-semibold text-black">
                     {fallbackPrice}
                   </p>
                 )}
               </div>
 
               {product.short_description ? (
-                <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
                   <div
-                    className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+                    className="prose max-w-none prose-p:leading-relaxed prose-a:text-[#c9b086] prose-strong:text-black prose-p:text-black/80"
                     dangerouslySetInnerHTML={{ __html: product.short_description }}
                   />
                 </div>
@@ -574,12 +524,11 @@ export default async function ProductPage({
               <div className="mt-6 flex flex-col gap-3 sm:flex-row items-stretch">
                 <button
                   type="button"
-                  className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
+                  className="rounded-2xl bg-black text-white font-semibold px-5 py-3 hover:bg-black/90 transition"
                 >
                   Dodaj do koszyka
                 </button>
 
-                {/* ✅ NUEVO: Icono corazón para Ulubione (sin quitar nada) */}
                 <div className="relative">
                   <UlubioneHeartButton
                     id={productId}
@@ -593,17 +542,18 @@ export default async function ProductPage({
               </div>
 
               {skuText || categoryNames.length > 0 ? (
-                <div className="mt-4 text-sm text-white/80 space-y-1">
+                <div className="mt-4 text-sm text-black/80 space-y-1">
                   {skuText ? (
                     <div>
-                      <span className="font-semibold">SKU:</span> {skuText}
+                      <span className="font-semibold text-black">SKU:</span>{" "}
+                      <span className="text-black/80">{skuText}</span>
                     </div>
                   ) : null}
 
                   {categoryNames.length > 0 ? (
                     <div>
-                      <span className="font-semibold">Kategorie:</span>{" "}
-                      <span className="text-white/70">
+                      <span className="font-semibold text-black">Kategorie:</span>{" "}
+                      <span className="text-black/70">
                         {categoryNames.join(", ")}
                       </span>
                     </div>
@@ -612,24 +562,20 @@ export default async function ProductPage({
               ) : null}
             </section>
 
-            {/* ✅ OPIS FULL WIDTH para no-fototapety */}
             {product.description ? (
-              <section className="md:col-span-2 mt-2 border-t border-white/10 pt-6">
-                <div className="text-lg font-semibold text-white/90 mb-3">
+              <section className="md:col-span-2 mt-2 border-t border-black/10 pt-6">
+                <div className="text-lg font-semibold text-black mb-3">
                   Opis
                 </div>
                 <div
-                  className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+                  className="prose max-w-none prose-p:leading-relaxed prose-a:text-[#c9b086] prose-strong:text-black prose-p:text-black/80"
                   dangerouslySetInnerHTML={{ __html: product.description }}
                 />
               </section>
             ) : null}
-
-            {/* ❌ Informacje dodatkowe NO aquí (solo Fototapety) */}
           </div>
         )}
 
-        {/* ✅ Productos relacionados (siempre) */}
         <RelatedProductsSection products={relatedProducts} />
       </div>
     </main>

@@ -345,7 +345,7 @@ function StepperInput({
           if (Number.isFinite(n)) onChange(n);
         }}
         onBlur={onBlur}
-        className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 outline-none focus:border-white/20"
+        className="w-full rounded-xl bg-white border border-black/15 px-4 py-3 outline-none focus:border-[#c9b086] text-black placeholder:text-black/40"
         style={{
           paddingRight: 52, // ✅ espacio reservado para flechas (DENTRO)
         }}
@@ -364,15 +364,15 @@ function StepperInput({
           flexDirection: "column",
           borderRadius: 10,
           overflow: "hidden",
-          border: "1px solid rgba(255,255,255,0.12)",
-          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(0,0,0,0.12)",
+          background: "rgba(0,0,0,0.03)",
         }}
       >
         <button
           type="button"
           aria-label="Increase"
           onClick={() => setClamped(safeValue + 1)}
-          className="grid place-items-center text-white/80 hover:text-white transition"
+          className="grid place-items-center text-black/70 hover:text-black transition"
           style={{
             height: 18,
             width: 28,
@@ -382,13 +382,13 @@ function StepperInput({
           <span style={{ fontSize: 10, transform: "translateY(0px)" }}>▲</span>
         </button>
 
-        <div style={{ height: 1, background: "rgba(255,255,255,0.12)" }} />
+        <div style={{ height: 1, background: "rgba(0,0,0,0.12)" }} />
 
         <button
           type="button"
           aria-label="Decrease"
           onClick={() => setClamped(safeValue - 1)}
-          className="grid place-items-center text-white/80 hover:text-white transition"
+          className="grid place-items-center text-black/70 hover:text-black transition"
           style={{
             height: 18,
             width: 28,
@@ -456,11 +456,11 @@ function ProductTrustBar({ avgText }: { avgText?: string | null }) {
 
   return (
     <div className="mt-4">
-      {line ? <div className="text-xs text-white/70">{line}</div> : null}
+      {line ? <div className="text-xs text-black/60">{line}</div> : null}
 
-      <div className="mt-3 border-t border-white/10" />
+      <div className="mt-3 border-t border-black/10" />
 
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 text-[11px] text-white/60">
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 text-[11px] text-black/60">
         <div className="flex items-center gap-2">
           <span className="text-[#c9b086]">
             <IconShield />
@@ -581,14 +581,19 @@ export default function FototapetyProductClient({
   };
 
   const transform = useMemo(() => {
-    return `scale(${zoom}) scaleX(${flipX ? -1 : 1}) scaleY(${flipY ? -1 : 1})`;
+    return `scale(${zoom}) scaleX(${flipX ? -1 : 1}) scaleY(${
+      flipY ? -1 : 1
+    })`;
   }, [zoom, flipX, flipY]);
 
   const stockLabel = useMemo(() => {
     return stockStatus === "instock" ? "Dostępny" : stockStatus || "";
   }, [stockStatus]);
 
-  const cleanPriceHtml = useMemo(() => buildCleanPriceHtml(priceHtml), [priceHtml]);
+  const cleanPriceHtml = useMemo(
+    () => buildCleanPriceHtml(priceHtml),
+    [priceHtml]
+  );
 
   const [materialOpen, setMaterialOpen] = useState(false);
   const [selectedMaterialId, setSelectedMaterialId] = useState<string>(
@@ -615,13 +620,14 @@ export default function FototapetyProductClient({
       : `/produkt/probka-fototapety`;
   }, [sku]);
 
-  const categoriesText = useMemo(() => joinCategories(categoryNames), [categoryNames]);
+  const categoriesText = useMemo(
+    () => joinCategories(categoryNames),
+    [categoryNames]
+  );
 
-  // ✅ Tabs: Opis / Informacje dodatkowe
   const [tab, setTab] = useState<"opis" | "info">("opis");
   const additionalRows = Array.isArray(additionalInfo) ? additionalInfo : [];
 
-  /* ✅ ULUBIONE datos (sin acceder al provider acá -> evita hydration mismatch) */
   const wishlistId = useMemo(() => {
     const n = Number(productId || 0);
     return Number.isFinite(n) && n > 0 ? n : 0;
@@ -632,14 +638,13 @@ export default function FototapetyProductClient({
     return String(url || "");
   }, [images]);
 
-  /* ✅ ref queda (no rompe) aunque ya no usemos el botón de texto */
   const heartBtnRef = useRef<HTMLButtonElement | null>(null);
 
   return (
     <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
       {/* IZQUIERDA */}
       <section className="self-start">
-        <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden shadow-lg">
+        <div className="rounded-2xl border border-black/10 bg-white overflow-hidden shadow-lg">
           {active ? (
             <div className="relative w-full overflow-hidden">
               {/* ✅ Wrapper para que el overlay se alinee visualmente con transform+filter */}
@@ -668,7 +673,7 @@ export default function FototapetyProductClient({
               </div>
             </div>
           ) : (
-            <div className="p-14 text-white/50">No image</div>
+            <div className="p-14 text-black/50">No image</div>
           )}
         </div>
 
@@ -706,7 +711,7 @@ export default function FototapetyProductClient({
           <button
             type="button"
             onClick={onReset}
-            className="h-9 rounded-md px-3 bg-white/10 border border-white/15 text-white hover:bg-white/15 transition shadow"
+            className="h-9 rounded-md px-3 bg-white border border-black/10 text-black hover:bg-black/5 transition shadow"
           >
             Reset
           </button>
@@ -722,8 +727,8 @@ export default function FototapetyProductClient({
                   type="button"
                   onClick={() => setActiveIdx(idx)}
                   className={[
-                    "rounded-xl overflow-hidden border bg-white/5",
-                    isActiveThumb ? "border-[#c9b086]" : "border-white/10",
+                    "rounded-xl overflow-hidden border bg-white",
+                    isActiveThumb ? "border-[#c9b086]" : "border-black/10",
                   ].join(" ")}
                   title={img.alt || productName}
                 >
@@ -740,27 +745,28 @@ export default function FototapetyProductClient({
           </div>
         ) : null}
 
-        <div className="mt-4 rounded-xl bg-white/10 border border-white/10 px-4 py-3 text-sm text-white/90">
-          <span className="font-semibold">Powierzchnia:</span> {areaM2.toFixed(2)} m²{" "}
-          <span className="text-white/40">|</span>{" "}
-          <span className="font-semibold">Wymiary:</span> {wClamped}x{hClamped} cm{" "}
-          <span className="text-white/40">|</span>{" "}
-          <span className="font-semibold">Bryty:</span> {panels.panelCount} x{" "}
-          {panels.panelWidth} cm
+        <div className="mt-4 rounded-xl bg-white border border-black/10 px-4 py-3 text-sm text-black/80">
+          <span className="font-semibold text-black">Powierzchnia:</span>{" "}
+          {areaM2.toFixed(2)} m² <span className="text-black/30">|</span>{" "}
+          <span className="font-semibold text-black">Wymiary:</span>{" "}
+          {wClamped}x{hClamped} cm <span className="text-black/30">|</span>{" "}
+          <span className="font-semibold text-black">Bryty:</span>{" "}
+          {panels.panelCount} x {panels.panelWidth} cm
         </div>
       </section>
 
       {/* DERECHA */}
       <section className="min-w-0">
-        <h1 className="text-2xl md:text-3xl font-bold leading-tight">{productName}</h1>
+        <h1 className="text-2xl md:text-3xl font-bold leading-tight text-black">
+          {productName}
+        </h1>
 
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
-            <label className="block text-sm text-white/80 mb-2">
-              Szerokość (cm) <span className="text-red-400">*</span>
+            <label className="block text-sm text-black/80 mb-2">
+              Szerokość (cm) <span className="text-red-500">*</span>
             </label>
 
-            {/* ✅ Flechas DENTRO del input */}
             <StepperInput
               value={w}
               onChange={(next) => setW(next)}
@@ -771,15 +777,16 @@ export default function FototapetyProductClient({
               ariaLabel="Szerokość (cm)"
             />
 
-            <div className="mt-2 text-xs text-white/60">Max: {maxW > 0 ? `${maxW} cm` : "—"}</div>
+            <div className="mt-2 text-xs text-black/60">
+              Max: {maxW > 0 ? `${maxW} cm` : "—"}
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm text-white/80 mb-2">
-              Wysokość (cm) <span className="text-red-400">*</span>
+            <label className="block text-sm text-black/80 mb-2">
+              Wysokość (cm) <span className="text-red-500">*</span>
             </label>
 
-            {/* ✅ Flechas DENTRO del input */}
             <StepperInput
               value={h}
               onChange={(next) => setH(next)}
@@ -790,32 +797,37 @@ export default function FototapetyProductClient({
               ariaLabel="Wysokość (cm)"
             />
 
-            <div className="mt-2 text-xs text-white/60">Max: {maxH > 0 ? `${maxH} cm` : "—"}</div>
+            <div className="mt-2 text-xs text-black/60">
+              Max: {maxH > 0 ? `${maxH} cm` : "—"}
+            </div>
           </div>
         </div>
 
         {/* MATERIAL */}
         <div className="mt-6">
-          <label className="block text-sm text-white/80 mb-2">Materiał</label>
+          <label className="block text-sm text-black/80 mb-2">Materiał</label>
 
           <button
             type="button"
             onClick={() => setMaterialOpen(true)}
-            className="w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-left hover:border-white/20 transition flex items-center justify-between gap-3"
+            className="w-full rounded-xl bg-white border border-black/10 px-4 py-3 text-left hover:border-black/20 transition flex items-center justify-between gap-3"
           >
-            <span className="text-white/90">{selectedMaterial?.name || "Wybierz materiał"}</span>
-            <span className="text-white/60 text-sm">Zmień</span>
+            <span className="text-black/90">
+              {selectedMaterial?.name || "Wybierz materiał"}
+            </span>
+            <span className="text-[#c9b086] text-sm font-semibold">Zmień</span>
           </button>
 
-          {/* ✅ Preview inline: título + subtítulo + mini descripción */}
           {selectedMaterial ? (
             <div className="mt-3">
               {selectedMaterial.subtitle ? (
-                <div className="text-sm text-white/70 leading-snug">{selectedMaterial.subtitle}</div>
+                <div className="text-sm text-black/70 leading-snug">
+                  {selectedMaterial.subtitle}
+                </div>
               ) : null}
 
               {selectedMaterial.desc ? (
-                <p className="mt-2 text-sm text-white/70 leading-relaxed">
+                <p className="mt-2 text-sm text-black/70 leading-relaxed">
                   {selectedMaterial.desc.length > 180
                     ? selectedMaterial.desc.slice(0, 180) + "…"
                     : selectedMaterial.desc}
@@ -825,7 +837,7 @@ export default function FototapetyProductClient({
           ) : null}
         </div>
 
-        {/* EFEKTY + ADDONS — UNA SOLA FILA + EQUIDISTANTES (SPACE-BETWEEN REAL) */}
+        {/* EFEKTY + ADDONS */}
         <div className="mt-5 w-full">
           <div
             style={{
@@ -836,36 +848,30 @@ export default function FototapetyProductClient({
               width: "100%",
             }}
           >
-            {/* Col 1: Efekty */}
             <div style={{ minWidth: 0 }}>
-              <label className="block text-sm text-white/80 mb-2">Efekty</label>
+              <label className="block text-sm text-black/80 mb-2">Efekty</label>
               <select
                 value={effect}
                 onChange={(e) => setEffect(e.target.value as EffectId)}
-                className="rounded-md bg-white/5 border border-white/10 px-3 py-2 outline-none focus:border-white/20 text-white"
+                className="rounded-md bg-white border border-black/10 px-3 py-2 outline-none focus:border-[#c9b086] text-black"
                 style={{ width: 180 }}
               >
-                <option value="none" className="bg-black">
-                  Brak
-                </option>
-                <option value="sepia" className="bg-black">
-                  Sepia
-                </option>
-                <option value="bw" className="bg-black">
-                  Czarno - Białe
-                </option>
+                <option value="none">Brak</option>
+                <option value="sepia">Sepia</option>
+                <option value="bw">Czarno - Białe</option>
               </select>
             </div>
 
-            {/* Col 2: Druk Premium */}
             <div style={{ minWidth: 0 }}>
-              <label className="block text-sm text-white/80 mb-2">Druk Premium</label>
-              <div className="flex items-center gap-2 text-sm text-white/80 select-none">
+              <label className="block text-sm text-black/80 mb-2">
+                Druk Premium
+              </label>
+              <div className="flex items-center gap-2 text-sm text-black/70 select-none">
                 <input
                   type="checkbox"
                   checked={drukPremium}
                   onChange={(e) => setDrukPremium(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+                  className="h-4 w-4 rounded border-black/20 bg-white accent-[#c9b086]"
                 />
                 <span className="whitespace-nowrap">10zł / m2</span>
                 <span className="translate-y-px">
@@ -874,15 +880,16 @@ export default function FototapetyProductClient({
               </div>
             </div>
 
-            {/* Col 3: Klej do tapet */}
             <div style={{ minWidth: 0 }}>
-              <label className="block text-sm text-white/80 mb-2">Klej do tapet</label>
-              <div className="flex items-center gap-2 text-sm text-white/80 select-none">
+              <label className="block text-sm text-black/80 mb-2">
+                Klej do tapet
+              </label>
+              <div className="flex items-center gap-2 text-sm text-black/70 select-none">
                 <input
                   type="checkbox"
                   checked={klejDoTapet}
                   onChange={(e) => setKlejDoTapet(e.target.checked)}
-                  className="h-4 w-4 rounded border-white/20 bg-white/5 accent-[#2f6fff]"
+                  className="h-4 w-4 rounded border-black/20 bg-white accent-[#c9b086]"
                 />
                 <span className="whitespace-nowrap">39.00 zł</span>
                 <span className="translate-y-px">
@@ -895,9 +902,9 @@ export default function FototapetyProductClient({
 
         {/* SHORT DESCRIPTION */}
         {shortDescriptionHtml ? (
-          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+          <div className="mt-6 rounded-2xl border border-black/10 bg-white p-5">
             <div
-              className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+              className="prose max-w-none prose-p:leading-relaxed prose-a:text-[#c9b086] prose-strong:text-black prose-p:text-black/80"
               dangerouslySetInnerHTML={{ __html: shortDescriptionHtml }}
             />
           </div>
@@ -907,11 +914,13 @@ export default function FototapetyProductClient({
         <div className="mt-6">
           {cleanPriceHtml ? (
             <div
-              className="text-lg md:text-xl font-semibold text-white/90"
+              className="text-lg md:text-xl font-semibold text-black"
               dangerouslySetInnerHTML={{ __html: cleanPriceHtml }}
             />
           ) : (
-            <p className="text-lg md:text-xl font-semibold text-white/90">{fallbackPrice || ""}</p>
+            <p className="text-lg md:text-xl font-semibold text-black">
+              {fallbackPrice || ""}
+            </p>
           )}
         </div>
 
@@ -919,12 +928,11 @@ export default function FototapetyProductClient({
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
           <button
             type="button"
-            className="rounded-2xl bg-white text-black font-semibold px-5 py-3 hover:bg-white/90 transition"
+            className="rounded-2xl bg-black text-white font-semibold px-5 py-3 hover:bg-black/90 transition"
           >
             Dodaj do koszyka
           </button>
 
-          {/* ✅ MISMO ICONO / COMPONENTE que el resto */}
           <div className="relative">
             <UlubioneHeartButton
               id={wishlistId}
@@ -939,38 +947,39 @@ export default function FototapetyProductClient({
           </div>
         </div>
 
-        {/* ✅ METADATOS debajo del CTA (como Woo) */}
         {(String(sku || "").trim() || categoriesText) ? (
-          <div className="mt-4 text-sm text-white/80 space-y-1">
+          <div className="mt-4 text-sm text-black/80 space-y-1">
             {String(sku || "").trim() ? (
               <div>
-                <span className="font-semibold">SKU:</span> {String(sku || "").trim()}
+                <span className="font-semibold text-black">SKU:</span>{" "}
+                {String(sku || "").trim()}
               </div>
             ) : null}
 
             {categoriesText ? (
               <div>
-                <span className="font-semibold">Kategorie:</span>{" "}
-                <span className="text-white/70">{categoriesText}</span>
+                <span className="font-semibold text-black">Kategorie:</span>{" "}
+                <span className="text-black/70">{categoriesText}</span>
               </div>
             ) : null}
           </div>
         ) : null}
 
-        {/* ✅ PROMEDIO + ENVÍOS */}
         <ProductTrustBar avgText={avgPrice30DaysText} />
 
-        {/* LINK A PRÓBKA */}
-        <div className="mt-3 text-xs text-white/60">
+        <div className="mt-3 text-xs text-black/60">
           Możesz uzyskać naszą próbkę fototapety pod tym linkiem:{" "}
-          <Link href={sampleHref} className="text-[#c9b086] hover:underline font-semibold">
+          <Link
+            href={sampleHref}
+            className="text-[#c9b086] hover:underline font-semibold"
+          >
             Próbka Fototapety 29.00zł
           </Link>
         </div>
       </section>
 
       {/* ✅ TABS FULL WIDTH */}
-      <section className="md:col-span-2 mt-6 border-t border-white/10 pt-6">
+      <section className="md:col-span-2 mt-6 border-t border-black/10 pt-6">
         <div className="flex items-center gap-6 text-sm">
           <button
             type="button"
@@ -978,8 +987,8 @@ export default function FototapetyProductClient({
             className={[
               "pb-3 border-b-2 transition",
               tab === "opis"
-                ? "border-[#c9b086] text-white"
-                : "border-transparent text-white/70 hover:text-white",
+                ? "border-[#c9b086] text-black"
+                : "border-transparent text-black/70 hover:text-black",
             ].join(" ")}
           >
             Opis
@@ -991,8 +1000,8 @@ export default function FototapetyProductClient({
             className={[
               "pb-3 border-b-2 transition",
               tab === "info"
-                ? "border-[#c9b086] text-white"
-                : "border-transparent text-white/70 hover:text-white",
+                ? "border-[#c9b086] text-black"
+                : "border-transparent text-black/70 hover:text-black",
             ].join(" ")}
           >
             Informacje dodatkowe
@@ -1002,31 +1011,35 @@ export default function FototapetyProductClient({
         <div className="mt-6">
           {tab === "opis" ? (
             <div
-              className="prose prose-invert max-w-none prose-p:leading-relaxed prose-a:text-white/90 prose-strong:text-white"
+              className="prose max-w-none prose-p:leading-relaxed prose-a:text-[#c9b086] prose-strong:text-black prose-p:text-black/80"
               dangerouslySetInnerHTML={{ __html: descriptionHtml || "" }}
             />
           ) : (
             <div className="w-full">
               {additionalRows.length ? (
-                <div className="w-full rounded-xl border border-white/10 overflow-hidden">
+                <div className="w-full rounded-xl border border-black/10 overflow-hidden bg-white">
                   <table className="w-full text-sm">
                     <tbody>
                       {additionalRows.map((row, idx) => (
                         <tr
                           key={`${row.label}-${idx}`}
-                          className="border-t border-white/10 first:border-t-0"
+                          className="border-t border-black/10 first:border-t-0"
                         >
-                          <td className="w-48 align-top bg-white/5 px-4 py-4 text-white/90 font-semibold">
+                          <td className="w-48 align-top bg-black/5 px-4 py-4 text-black font-semibold">
                             {row.label}
                           </td>
-                          <td className="px-4 py-4 text-white/70">{row.value}</td>
+                          <td className="px-4 py-4 text-black/70">
+                            {row.value}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ) : (
-                <div className="text-white/60 text-sm">Brak danych dodatkowych.</div>
+                <div className="text-black/60 text-sm">
+                  Brak danych dodatkowych.
+                </div>
               )}
             </div>
           )}
@@ -1036,21 +1049,20 @@ export default function FototapetyProductClient({
       {/* POPUP MATERIAL — SIEMPRE 2 COLUMNAS (lista izquierda / imagen+desc derecha) */}
       {materialOpen ? (
         <div
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
           onMouseDown={() => setMaterialOpen(false)}
         >
           <div
-            className="w-full max-w-4xl rounded-2xl border border-white/10 bg-[#0b0b0b] shadow-2xl overflow-hidden"
+            className="w-full max-w-4xl rounded-2xl border border-black/10 bg-white shadow-2xl overflow-hidden"
             style={{ maxHeight: "86vh" }}
             onMouseDown={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-start justify-between px-5 py-4 border-b border-white/10">
+            <div className="flex items-start justify-between px-5 py-4 border-b border-black/10">
               <div className="min-w-0">
-                <h3 className="text-lg font-semibold text-white/90 leading-tight">
+                <h3 className="text-lg font-semibold text-black leading-tight">
                   Wybierz materiał
                 </h3>
-                <p className="mt-1 text-sm text-white/60">
+                <p className="mt-1 text-sm text-black/60">
                   Kliknij materiał, aby wybrać i zobaczyć opis.
                 </p>
               </div>
@@ -1058,13 +1070,12 @@ export default function FototapetyProductClient({
               <button
                 type="button"
                 onClick={() => setMaterialOpen(false)}
-                className="shrink-0 rounded-xl px-4 py-2 bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 transition shadow"
+                className="shrink-0 rounded-xl px-4 py-2 bg-white border border-black/10 text-black/80 hover:bg-black/5 transition shadow"
               >
                 Zamknij
               </button>
             </div>
 
-            {/* Body: ✅ FORZAR SIEMPRE 2 COLUMNAS */}
             <div
               className="p-5"
               style={{
@@ -1074,7 +1085,7 @@ export default function FototapetyProductClient({
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "320px 1fr", // ✅ siempre lista izquierda + preview derecha
+                  gridTemplateColumns: "320px 1fr",
                   gap: 20,
                   height: "100%",
                 }}
@@ -1101,20 +1112,20 @@ export default function FototapetyProductClient({
                           className={[
                             "w-full text-left rounded-2xl px-4 py-3 transition border shadow-sm",
                             isActiveMat
-                              ? "border-[#c9b086] bg-white/10"
-                              : "border-white/10 bg-white/5 hover:bg-white/7 hover:border-white/20",
+                              ? "border-[#c9b086] bg-black/5"
+                              : "border-black/10 bg-white hover:bg-black/5 hover:border-black/20",
                           ].join(" ")}
                         >
-                          <div className="text-sm font-semibold text-white/90 leading-snug">
+                          <div className="text-sm font-semibold text-black leading-snug">
                             {m.name}
                           </div>
 
                           {m.subtitle ? (
-                            <div className="mt-1 text-xs text-white/55 leading-snug">
+                            <div className="mt-1 text-xs text-black/55 leading-snug">
                               {m.subtitle}
                             </div>
                           ) : (
-                            <div className="mt-1 text-xs text-white/50">
+                            <div className="mt-1 text-xs text-black/50">
                               Kliknij, aby zobaczyć opis
                             </div>
                           )}
@@ -1124,18 +1135,17 @@ export default function FototapetyProductClient({
                   </div>
                 </div>
 
-                {/* Right: preview (scroll vertical para TODA la info) */}
+                {/* Right: preview (scroll vertical) */}
                 <div className="min-w-0">
                   <div
-                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                    className="rounded-2xl border border-black/10 bg-white p-4"
                     style={{
                       maxHeight: "calc(86vh - 110px)",
-                      overflowY: "auto", // ✅ scroll vertical aquí
+                      overflowY: "auto",
                       overflowX: "hidden",
                     }}
                   >
-                    {/* Image preview (tamaño correcto) */}
-                    <div className="relative rounded-xl border border-white/10 bg-black/30 overflow-hidden">
+                    <div className="relative rounded-xl border border-black/10 bg-black/5 overflow-hidden">
                       <div
                         style={{
                           aspectRatio: "16 / 9",
@@ -1151,17 +1161,16 @@ export default function FototapetyProductClient({
                             loading="lazy"
                           />
                         ) : (
-                          <div className="h-full w-full grid place-items-center text-white/50 text-sm">
+                          <div className="h-full w-full grid place-items-center text-black/50 text-sm">
                             Brak zdjęcia
                           </div>
                         )}
                       </div>
 
-                      {/* Lupa abajo-derecha */}
                       <div className="absolute bottom-3 right-3">
                         <button
                           type="button"
-                          className="h-9 w-9 rounded-full bg-black/55 border border-white/15 text-white/80 hover:bg-black/70 transition grid place-items-center"
+                          className="h-9 w-9 rounded-full bg-white/70 border border-black/10 text-black/80 hover:bg-white transition grid place-items-center"
                           aria-label="Powiększ podgląd"
                           title="Powiększ"
                           onClick={() => {}}
@@ -1171,49 +1180,54 @@ export default function FototapetyProductClient({
                       </div>
                     </div>
 
-                    {/* Texts */}
                     <div className="mt-4">
-                      <div className="text-lg font-semibold text-white/90 leading-tight">
+                      <div className="text-lg font-semibold text-black leading-tight">
                         {selectedMaterial?.name}
                       </div>
 
                       {selectedMaterial?.subtitle ? (
-                        <div className="mt-1 text-sm text-white/60">{selectedMaterial.subtitle}</div>
+                        <div className="mt-1 text-sm text-black/60">
+                          {selectedMaterial.subtitle}
+                        </div>
                       ) : null}
 
-                      <div className="mt-2 text-sm text-white/55">
+                      <div className="mt-2 text-sm text-black/60">
                         Pasowanie brytów:{" "}
-                        <span className="text-white/70">
+                        <span className="text-black/70">
                           {selectedMaterial?.features?.find((f) =>
                             /Pasowanie brytów/i.test(f)
                           ) || "—"}
                         </span>{" "}
-                        • Maks. szerokość brytu: <span className="text-white/70">100 cm</span>
+                        • Maks. szerokość brytu:{" "}
+                        <span className="text-black/70">100 cm</span>
                       </div>
 
-                      <div className="mt-3 text-sm text-white/75 leading-relaxed whitespace-pre-line">
+                      <div className="mt-3 text-sm text-black/75 leading-relaxed whitespace-pre-line">
                         {selectedMaterial?.desc || "Brak opisu."}
                       </div>
 
                       {Array.isArray(selectedMaterial?.features) &&
                       selectedMaterial.features.length ? (
                         <div className="mt-4">
-                          <div className="text-sm font-semibold text-white/85">Cechy materiału:</div>
-                          <ul className="mt-2 space-y-1 text-sm text-white/70 list-disc pl-5">
+                          <div className="text-sm font-semibold text-black/85">
+                            Cechy materiału:
+                          </div>
+                          <ul className="mt-2 space-y-1 text-sm text-black/70 list-disc pl-5">
                             {selectedMaterial.features.map((f, idx) => (
-                              <li key={`${selectedMaterial.id}-f-${idx}`}>{f}</li>
+                              <li key={`${selectedMaterial.id}-f-${idx}`}>
+                                {f}
+                              </li>
                             ))}
                           </ul>
                         </div>
                       ) : null}
                     </div>
 
-                    {/* Footer buttons (sticky visual dentro del scroll) */}
                     <div className="mt-5 flex items-center justify-end gap-3">
                       <button
                         type="button"
                         onClick={() => setMaterialOpen(false)}
-                        className="rounded-2xl px-6 py-3 bg-white/10 border border-white/15 text-white/85 hover:bg-white/15 transition"
+                        className="rounded-2xl px-6 py-3 bg-white border border-black/10 text-black/80 hover:bg-black/5 transition"
                       >
                         Anuluj
                       </button>
@@ -1231,7 +1245,6 @@ export default function FototapetyProductClient({
                 {/* /Right */}
               </div>
             </div>
-            {/* /Body */}
           </div>
         </div>
       ) : null}

@@ -76,7 +76,7 @@ export default function FototapetyCropOverlay({
   const cropSize = useMemo(() => {
     const overlayW = host.w;
     const overlayH = host.h;
-    if (!overlayW || !overlayH || !Number.isFinite(ratio) || ratio <= 0) {
+    if (!overlayW || !overlayH || ratio <= 0) {
       return { w: 0, h: 0 };
     }
 
@@ -101,17 +101,14 @@ export default function FototapetyCropOverlay({
       return { left: 0, top: 0 };
     }
 
-    // default centered
     let left = (overlayW - boxW) / 2;
     let top = (overlayH - boxH) / 2;
 
-    // manual en porcentaje -> px
     if (manualPosPct) {
       left = (manualPosPct.x / 100) * overlayW;
       top = (manualPosPct.y / 100) * overlayH;
     }
 
-    // clamp para que no se salga
     left = clamp(left, 0, overlayW - boxW);
     top = clamp(top, 0, overlayH - boxH);
 
@@ -141,8 +138,7 @@ export default function FototapetyCropOverlay({
   };
 
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!draggable) return;
-    if (!dragRef.current.dragging) return;
+    if (!draggable || !dragRef.current.dragging) return;
 
     const overlayW = host.w;
     const overlayH = host.h;
@@ -153,12 +149,7 @@ export default function FototapetyCropOverlay({
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
 
-    /**
-     * ✅ FIX REAL:
-     * Cuando el árbol está espejado por scaleX(-1) o scaleY(-1),
-     * el delta “se siente” invertido. Corregimos invirtiendo dx/dy
-     * según el estado flipX/flipY.
-     */
+    // ✅ corrección por flip
     const dxEff = flipX ? -dx : dx;
     const dyEff = flipY ? -dy : dy;
 
@@ -168,15 +159,14 @@ export default function FototapetyCropOverlay({
     nextLeft = clamp(nextLeft, 0, overlayW - boxW);
     nextTop = clamp(nextTop, 0, overlayH - boxH);
 
-    // guardamos en porcentaje para estabilidad
-    const xPct = (nextLeft / overlayW) * 100;
-    const yPct = (nextTop / overlayH) * 100;
-    setManualPosPct({ x: xPct, y: yPct });
+    setManualPosPct({
+      x: (nextLeft / overlayW) * 100,
+      y: (nextTop / overlayH) * 100,
+    });
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!draggable) return;
-    if (!dragRef.current.dragging) return;
 
     dragRef.current.dragging = false;
     dragRef.current.pointerId = null;
@@ -200,11 +190,11 @@ export default function FototapetyCropOverlay({
     const B = T + BH;
 
     return `polygon(evenodd,
-      0px 0px,
-      ${W}px 0px,
+      0 0,
+      ${W}px 0,
       ${W}px ${H}px,
-      0px ${H}px,
-      0px 0px,
+      0 ${H}px,
+      0 0,
 
       ${L}px ${T}px,
       ${R}px ${T}px,
@@ -212,27 +202,28 @@ export default function FototapetyCropOverlay({
       ${L}px ${B}px,
       ${L}px ${T}px
     )`;
-  }, [host.w, host.h, cropPosPx.left, cropPosPx.top, cropSize.w, cropSize.h]);
+  }, [host.w, host.h, cropPosPx, cropSize]);
 
   return (
     <div
       ref={hostRef}
-      className={["absolute inset-0 z-20", "pointer-events-none", className || ""].join(
-        " "
-      )}
-      style={{ touchAction: "pan-y" }}
+      className={[
+        "absolute inset-0 z-20 pointer-events-none",
+        className || "",
+      ].join(" ")}
     >
+      {/* Overlay oscuro */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0"
         style={{
-          background: "rgba(0,0,0,0.48)",
+          background: "rgba(0,0,0,0.45)",
           clipPath: overlayClipPath,
           WebkitClipPath: overlayClipPath as any,
-          transform: "translateZ(0)",
         }}
       />
 
+      {/* Área de recorte */}
       <div
         className="pointer-events-auto absolute"
         onPointerDown={onPointerDown}
@@ -244,48 +235,42 @@ export default function FototapetyCropOverlay({
           top: cropPosPx.top,
           width: cropSize.w,
           height: cropSize.h,
-          border: "3px dashed rgba(255,255,255,0.85)",
-          background: "transparent",
-          boxSizing: "border-box",
+          border: "3px dashed #c9b086",
+          boxShadow: "0 0 0 1px rgba(0,0,0,0.4) inset",
           cursor: draggable ? "move" : "default",
-          userSelect: "none",
-          touchAction: "none",
-          animation: "mm-dash 1.5s infinite",
-          boxShadow: "0 0 0 1px rgba(0,0,0,0.35) inset",
+          animation: "mm-dash 1.4s ease-in-out infinite",
         }}
       >
-        {panels.count > 1
-          ? Array.from({ length: panels.count - 1 }).map((_, i) => {
-              const leftPct = ((i + 1) / panels.count) * 100;
-              return (
-                <div
-                  key={i}
-                  aria-hidden="true"
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    bottom: 0,
-                    left: `${leftPct}%`,
-                    width: 0,
-                    borderRight: "2px dashed rgba(255,255,255,0.85)",
-                    pointerEvents: "none",
-                  }}
-                />
-              );
-            })
-          : null}
+        {/* divisiones (bryty) */}
+        {panels.count > 1 &&
+          Array.from({ length: panels.count - 1 }).map((_, i) => {
+            const leftPct = ((i + 1) / panels.count) * 100;
+            return (
+              <div
+                key={i}
+                aria-hidden="true"
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: `${leftPct}%`,
+                  borderRight: "2px dashed rgba(201,176,134,0.9)",
+                }}
+              />
+            );
+          })}
       </div>
 
       <style jsx global>{`
         @keyframes mm-dash {
           0% {
-            border-color: rgba(255, 255, 255, 0.85);
+            opacity: 1;
           }
           50% {
-            border-color: rgba(255, 255, 255, 0.25);
+            opacity: 0.4;
           }
           100% {
-            border-color: rgba(255, 255, 255, 0.85);
+            opacity: 1;
           }
         }
       `}</style>
