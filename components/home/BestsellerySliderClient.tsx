@@ -280,20 +280,23 @@ export default function BestsellerySliderClient({
     // Si está animando, acumulamos y salimos (sin temblor)
     if (isAnimatingRef.current) {
       // limitamos cola para no acumular infinito
-      queuedDeltaRef.current = Math.max(-20, Math.min(20, queuedDeltaRef.current + delta));
+      queuedDeltaRef.current = Math.max(
+        -20,
+        Math.min(20, queuedDeltaRef.current + delta)
+      );
       return;
     }
 
     applyMove(delta);
   };
 
-  // Autoplay cada 6s (desktop + mobile)
+  // Autoplay cada 8s (desktop + mobile) — ajustado para acompañar transición más lenta
   useEffect(() => {
     if (!baseLen) return;
 
     const t = window.setInterval(() => {
       requestMove(1);
-    }, 6000);
+    }, 8000);
 
     return () => window.clearInterval(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -404,7 +407,7 @@ export default function BestsellerySliderClient({
               className={[
                 "flex gap-6 will-change-transform",
                 enableTransition
-                  ? "transition-transform duration-500 ease-in-out"
+                  ? "transition-transform duration-900 ease-in-out"
                   : "transition-none",
               ].join(" ")}
               style={{
