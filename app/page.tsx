@@ -1,11 +1,45 @@
 // app/page.tsx
 import Image from "next/image";
 import Link from "next/link";
+import BestsellerySliderClient from "@/components/home/BestsellerySliderClient";
+
+// Ajustá este import si tu helper existe con otro nombre/ruta.
+// Si ya tenés getProducts en "@/lib/woo", mantenelo así.
+import { getProducts } from "@/lib/woo";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function Home() {
+  let products: any[] = [];
+  let bestsellery: any[] = [];
+
+  try {
+    // Traemos más para poder filtrar “bestsellery” sin quedarnos cortos.
+    // Si tu getProducts acepta límite, esto funciona. Si no, lo adaptamos.
+    products = await getProducts(30);
+
+    // Filtrado por categoría slug “bestsellery” (o nombre “Bestsellery”)
+    bestsellery = (Array.isArray(products) ? products : []).filter((p: any) => {
+      const cats = Array.isArray(p?.categories) ? p.categories : [];
+      return cats.some((c: any) => {
+        const slug = String(c?.slug || "").toLowerCase();
+        const name = String(c?.name || "").toLowerCase();
+        return slug === "bestsellery" || name === "bestsellery";
+      });
+    });
+
+    // Fallback: si no hay categoría o aún no está consistente, mostramos primeros 8
+    if (!bestsellery.length) {
+      bestsellery = (Array.isArray(products) ? products : []).slice(0, 8);
+    } else {
+      bestsellery = bestsellery.slice(0, 12);
+    }
+  } catch (e) {
+    // Si falla el fetch, simplemente no mostramos el slider
+    bestsellery = [];
+  }
+
   return (
     <main className="w-full bg-white">
       {/* HERO (estático por ahora; luego slider) */}
@@ -36,7 +70,7 @@ export default async function Home() {
                       "inline-flex items-center justify-center",
                       "bg-black px-10 py-3",
                       "text-sm font-semibold",
-                      "text-white!", // fuerza blanco aunque haya estilos globales
+                      "text-white", // sin hover (como pediste)
                       "cursor-pointer",
                     ].join(" ")}
                   >
@@ -62,6 +96,11 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ✅ BESTSELLERY SLIDER (nuevo) */}
+      {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
+        <BestsellerySliderClient products={bestsellery} viewAllHref="/kategoria-produktu/bestsellery" />
+      ) : null}
 
       {/* CUERPO (vacío por ahora) */}
       <section className="w-full">
