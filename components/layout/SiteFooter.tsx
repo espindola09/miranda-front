@@ -7,13 +7,14 @@ export default function SiteFooter() {
     <footer className="w-full bg-white border-t border-[#c9b086]/40 mt-20">
       {/* CONTENIDO PRINCIPAL */}
       <div className="mx-auto max-w-7xl px-6 py-14">
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-4">
+        {/* ✅ Mobile centrado / Desktop izquierda */}
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-4 text-center md:text-left">
           {/* BLOQUE LOGO / MEDAL */}
-          <div>
+          <div className="flex flex-col items-center md:items-start">
             <img
               src="https://drukdekoracje.pl/wp-content/uploads/2025/03/medal-2002-text.png.webp"
               alt="Od 2002 roku – 23 lata na rynku"
-              className="w-40 h-auto"
+              className="w-40 h-auto mx-auto md:mx-0"
               loading="lazy"
             />
 
@@ -42,7 +43,7 @@ export default function SiteFooter() {
             </div>
 
             {/* SOCIAL */}
-            <div className="mt-6 flex items-center gap-4 text-black">
+            <div className="mt-6 flex items-center justify-center md:justify-start gap-4 text-black">
               <a
                 href="#"
                 aria-label="Facebook"
@@ -76,7 +77,7 @@ export default function SiteFooter() {
             <h4 className="mb-4 text-sm font-bold uppercase tracking-wide">
               Firma
             </h4>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-3 text-sm flex flex-col items-center md:items-start">
               <li>
                 <Link href="/o-nas" className="hover:text-[#c9b086] transition">
                   O nas
@@ -100,7 +101,7 @@ export default function SiteFooter() {
             <h4 className="mb-4 text-sm font-bold uppercase tracking-wide">
               Zamówienia
             </h4>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-3 text-sm flex flex-col items-center md:items-start">
               <li>
                 <Link href="/dostawa" className="hover:text-[#c9b086] transition">
                   Dostawa
@@ -123,10 +124,7 @@ export default function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/faq"
-                  className="hover:text-[#c9b086] transition"
-                >
+                <Link href="/faq" className="hover:text-[#c9b086] transition">
                   Najczęściej zadawane pytania
                 </Link>
               </li>
@@ -146,19 +144,28 @@ export default function SiteFooter() {
             <h4 className="mb-4 text-sm font-bold uppercase tracking-wide">
               Usługi i produkty
             </h4>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-3 text-sm flex flex-col items-center md:items-start">
               <li>
-                <Link href="/fototapety" className="hover:text-[#c9b086] transition">
+                <Link
+                  href="/fototapety"
+                  className="hover:text-[#c9b086] transition"
+                >
                   Fototapety
                 </Link>
               </li>
               <li>
-                <Link href="/naklejki" className="hover:text-[#c9b086] transition">
+                <Link
+                  href="/naklejki"
+                  className="hover:text-[#c9b086] transition"
+                >
                   Naklejki ścienne
                 </Link>
               </li>
               <li>
-                <Link href="/plakaty" className="hover:text-[#c9b086] transition">
+                <Link
+                  href="/plakaty"
+                  className="hover:text-[#c9b086] transition"
+                >
                   Plakaty
                 </Link>
               </li>
@@ -198,7 +205,7 @@ export default function SiteFooter() {
 
       {/* BOTTOM BAR */}
       <div className="border-t border-[#c9b086]/40">
-        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-black">
+        <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col items-center text-center gap-4 md:flex-row md:items-center md:justify-between md:text-left text-sm text-black">
           <div>Copyright © 2026 Graften.pl</div>
 
           {/* ✅ IMAGEN ÚNICA DE MÉTODOS DE PAGO */}
@@ -206,7 +213,7 @@ export default function SiteFooter() {
             <img
               src="https://websitedemos.net/home-garden-decor-02/wp-content/uploads/sites/1034/2022/02/payment-image.png"
               alt="Metody płatności"
-              className="h-5 w-auto object-contain"
+              className="h-4 md:h-5 w-auto object-contain"
               loading="lazy"
             />
           </div>

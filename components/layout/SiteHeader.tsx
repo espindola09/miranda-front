@@ -52,35 +52,39 @@ export default function SiteHeader() {
     <header className="w-full">
       {/* TOP BAR (full width) */}
       <div className="w-full bg-[#c9b086] text-black">
-        <div className="w-full px-6">
-          <div className="flex h-8 items-center justify-center text-xs font-semibold tracking-wide">
-            <span className="opacity-90">Promocja</span>
-            <span className="ml-2 text-red-600 font-extrabold">-40%</span>
-            <span className="mx-3 opacity-50">na wszystko</span>
-            <span className="mx-3 opacity-50">|</span>
-            <span className="text-red-600 font-extrabold">365 dni na zwrot</span>
-            <span className="mx-3 opacity-50">|</span>
-            <span className="opacity-90">100 000+ zadowolonych klientów</span>
+        <div className="w-full px-3 sm:px-6">
+          {/* ✅ Mobile: texto más compacto + no overflow */}
+          <div className="flex h-8 items-center justify-center text-[11px] sm:text-xs font-semibold tracking-wide">
+            <div className="max-w-full truncate text-center whitespace-nowrap">
+              <span className="opacity-90">Promocja</span>
+              <span className="ml-2 text-red-600 font-extrabold">-40%</span>
+              <span className="mx-3 opacity-60">na wszystko</span>
+              <span className="mx-3 opacity-50">|</span>
+              <span className="text-red-600 font-extrabold">365 dni na zwrot</span>
+              <span className="mx-3 opacity-50">|</span>
+              <span className="opacity-90">100 000+ zadowolonych klientów</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* MAIN HEADER (full width) */}
       <div className="w-full bg-white text-black border-b border-black/10">
-        <div className="w-full px-6">
-          <div className="flex h-16 items-center gap-6">
-            {/* LOGO (izquierda) */}
+        <div className="w-full px-3 sm:px-6">
+          {/* ✅ Altura responsive: más chica en mobile */}
+          <div className="flex h-14 sm:h-16 items-center gap-3 sm:gap-6">
+            {/* LOGO */}
             <Link href="/" className="flex items-center shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="https://drukdekoracje.pl/wp-content/uploads/2024/11/cropped-logomm-50x44.png"
                 alt="Logo"
-                className="h-10 w-auto"
+                className="h-9 sm:h-10 w-auto"
                 loading="eager"
               />
             </Link>
 
-            {/* ✅ CENTRO: ocupa TODO el espacio disponible, y empuja menú hacia la derecha */}
+            {/* MENU (desktop only) */}
             <div className="hidden lg:flex flex-1 items-center justify-end">
               <nav className="flex items-center justify-end gap-8 text-[13px] font-semibold tracking-wide">
                 <Link className="hover:text-[#c9b086] transition" href="/sklep-fototapety">
@@ -104,8 +108,8 @@ export default function SiteHeader() {
               </nav>
             </div>
 
-            {/* ICONS (derecha, fijo) */}
-            <div className="ml-auto flex items-center gap-3 shrink-0">
+            {/* ICONS */}
+            <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
               <button
                 type="button"
                 className="h-9 w-9 rounded-full border border-black/10 hover:border-[#c9b086] hover:text-[#c9b086] transition grid place-items-center"
@@ -117,7 +121,7 @@ export default function SiteHeader() {
 
               <button
                 type="button"
-                className="h-9 w-9 rounded-full border border-black/10 hover:border-[#c9b086] hover:text-[#c9b086] transition grid place-items-center"
+                className="hidden sm:grid h-9 w-9 rounded-full border border-black/10 hover:border-[#c9b086] hover:text-[#c9b086] transition place-items-center"
                 aria-label="Telefon"
                 title="Telefon"
               >
@@ -145,10 +149,10 @@ export default function SiteHeader() {
                 </span>
               </Link>
 
-              {/* Mobile menu placeholder */}
+              {/* ✅ Mobile/Tablet: botón de menú visible, más “WP-like” */}
               <button
                 type="button"
-                className="lg:hidden h-9 px-3 rounded-full border border-black/10 hover:border-[#c9b086] transition text-xs font-semibold"
+                className="lg:hidden h-9 px-3 rounded-full border border-black/10 hover:border-[#c9b086] transition text-xs font-semibold tracking-wide"
                 aria-label="Menu"
               >
                 MENU
