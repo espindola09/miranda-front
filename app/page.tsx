@@ -1,62 +1,72 @@
-import { getProducts } from "@/lib/woo";
+// app/page.tsx
+import Image from "next/image";
+import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export default async function Home() {
-  let products: any[] = [];
-  let error = false;
-
-  try {
-    products = await getProducts(6);
-  } catch (e) {
-    console.error("Woo API error:", e);
-    error = true;
-  }
-
   return (
-    <main className="p-8">
-      <h1 className="text-3xl font-bold mb-6">
-        Miranda Morris — Next Headless
-      </h1>
+    <main className="w-full bg-white">
+      {/* HERO (estático por ahora; luego slider) */}
+      <section className="w-full">
+        <div className="w-full border-b border-[#c9b086]/60">
+          <div className="grid w-full grid-cols-1 lg:grid-cols-[420px_1fr]">
+            {/* PANEL IZQUIERDO */}
+            <div className="bg-[#f3eee6] px-6 py-12 lg:px-14 lg:py-20">
+              {/* ✅ En mobile/tablet centrado; en escritorio (lg+) vuelve a la izquierda */}
+              <div className="mx-auto max-w-md text-center lg:mx-0 lg:text-left">
+                <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-black sm:text-5xl">
+                  Twoja
+                  <br />
+                  Fototapeta
+                </h1>
 
-      {error && (
-        <div className="mb-6 rounded border border-red-500 bg-red-50 p-4 text-red-700">
-          No se pudieron cargar productos (posible 401 / credenciales / bloqueo).
-          Revisá permisos de la API WooCommerce.
-        </div>
-      )}
+                <p className="mt-6 text-xl leading-relaxed text-black/70 sm:text-2xl">
+                  największy wybór
+                  <br />
+                  bestsellerów
+                </p>
 
-      {!error && products.length === 0 && (
-        <p className="text-gray-500">No hay productos para mostrar.</p>
-      )}
+                {/* CTA */}
+                <div className="mt-8 flex justify-center lg:justify-start">
+                  <Link
+                    href="/sklep-fototapety"
+                    className={[
+                      "inline-flex items-center justify-center",
+                      "bg-black px-10 py-3",
+                      "text-sm font-semibold",
+                      "text-white!", // fuerza blanco aunque haya estilos globales
+                      "cursor-pointer",
+                    ].join(" ")}
+                  >
+                    Sprawdź
+                  </Link>
+                </div>
+              </div>
+            </div>
 
-      {!error && products.length > 0 && (
-        <ul className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {products.map((p) => (
-            <li key={p.id} className="border p-4 rounded">
-              {p.images?.[0]?.src && (
-                <img
-                  src={p.images[0].src}
-                  alt={p.name}
-                  className="w-full h-48 object-cover mb-3"
+            {/* PANEL DERECHO (imagen) */}
+            <div className="relative w-full">
+              <div className="relative h-90 w-full sm:h-105 lg:h-130 xl:h-140">
+                <Image
+                  src="https://drukdekoracje.pl/wp-content/uploads/2025/11/AdobeStock_6609484541HD-v3-low.webp"
+                  alt="Twoja Fototapeta – największy wybór bestsellerów"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 70vw"
+                  className="object-cover"
                 />
-              )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <a
-                href={`/produkt/${p.slug}`}
-                className="font-semibold hover:underline block"
-              >
-                {p.name}
-              </a>
-
-              {p.price && (
-                <p className="text-sm text-gray-600">{p.price} zł</p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* CUERPO (vacío por ahora) */}
+      <section className="w-full">
+        <div className="mx-auto max-w-7xl px-6 py-10" />
+      </section>
     </main>
   );
 }
