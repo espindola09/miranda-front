@@ -85,6 +85,26 @@ function useVisibleCount() {
   return count;
 }
 
+/**
+ * ✅ Si hay pocos productos, repetimos la base para que el loop sea viable
+ * (si solo hay 4 productos y mostrás 4, el loop perfecto es imposible sin repetir).
+ */
+function buildLoopBase(items: WooProduct[], minLen: number) {
+  const base = Array.isArray(items) ? items : [];
+  if (!base.length) return [];
+
+  if (base.length >= minLen) return base;
+
+  const out: WooProduct[] = [];
+  while (out.length < minLen) {
+    for (const it of base) {
+      out.push(it);
+      if (out.length >= minLen) break;
+    }
+  }
+  return out;
+}
+
 export default function BestsellerySliderClient({
   products,
   viewAllHref = "/kategoria-produktu/bestsellery",
@@ -106,19 +126,52 @@ export default function BestsellerySliderClient({
   const [stepPx, setStepPx] = useState(0);
   const [index, setIndex] = useState(0);
 
+  const indexRef = useRef(0);
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+
   // Reset “infinito”
   const [enableTransition, setEnableTransition] = useState(true);
 
-  // ✅ MEJORA CLAVE:
-  // Clonamos MÁS que visibleCount para que NUNCA falten cards en viewport al llegar al final.
-  const extended = useMemo(() => {
-    if (!items.length) return [];
-
-    const cloneCount = Math.min(items.length, visibleCount + 2);
-    const clones = items.slice(0, cloneCount);
-
-    return [...items, ...clones];
+  /**
+   * ✅ Loop sin huecos:
+   * - base suficientemente grande
+   * - pista = base repetida muchas veces
+   * - arrancamos en el bloque central
+   * - cuando nos acercamos a bordes, “snap” invisible al centro y seguimos
+   */
+  const base = useMemo(() => {
+    // mínimo para que no “falte” contenido al mover 1 paso con 4 visibles
+    const minLen = Math.max(visibleCount * 6, visibleCount + 2);
+    return buildLoopBase(items, minLen);
   }, [items, visibleCount]);
+
+  const REPEAT = 9; // impar (centro claro)
+  const baseLen = base.length;
+  const center = baseLen * Math.floor(REPEAT / 2);
+
+  const extended = useMemo(() => {
+    if (!baseLen) return [];
+    const out: WooProduct[] = [];
+    for (let r = 0; r < REPEAT; r++) out.push(...base);
+    return out;
+  }, [base, baseLen]);
+
+  // límites de seguridad (antes de llegar al “fin” real)
+  const lowerLimit = baseLen * 1; // dejamos 1 bloque a la izquierda
+  const upperLimit = baseLen * (REPEAT - 2); // dejamos 2 bloques a la derecha
+
+  // Set inicial (centro) cuando cambia base o el responsive
+  useEffect(() => {
+    if (!baseLen) return;
+
+    setEnableTransition(false);
+    setIndex(center);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEnableTransition(true));
+    });
+  }, [baseLen, center, visibleCount]);
 
   // Medir step = ancho de card + gap real
   useEffect(() => {
@@ -145,55 +198,95 @@ export default function BestsellerySliderClient({
     if (firstCardRef.current) ro.observe(firstCardRef.current);
 
     return () => ro.disconnect();
-  }, [visibleCount, items.length]);
+  }, [visibleCount, baseLen]);
 
-  // Autoplay cada 3s (desktop + mobile)
-  useEffect(() => {
-    if (!items.length) return;
+  const snapToCenterSameItem = (targetIndex: number) => {
+    if (!baseLen) return;
 
-    const t = window.setInterval(() => {
-      setIndex((prev) => prev + 1);
-    }, 3000);
+    const mod = ((targetIndex % baseLen) + baseLen) % baseLen;
+    const snapIndex = center + mod;
 
-    return () => window.clearInterval(t);
-  }, [items.length]);
+    setEnableTransition(false);
+    setIndex(snapIndex);
 
-  const goPrev = () => {
-    if (!items.length) return;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => setEnableTransition(true));
+    });
+  };
 
-    if (index === 0) {
-      setEnableTransition(false);
-      setIndex(items.length);
+  const moveNext = () => {
+    if (!baseLen) return;
+
+    const current = indexRef.current;
+    const next = current + 1;
+
+    // Si estamos cerca del borde derecho, primero snap invisible al centro
+    // y recién ahí seguimos moviendo (sin mostrar huecos nunca).
+    if (next >= upperLimit) {
+      snapToCenterSameItem(next);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          setEnableTransition(true);
-          setIndex(items.length - 1);
+          setIndex((p) => p + 1);
         });
       });
       return;
     }
 
-    setIndex((p) => p - 1);
+    setIndex(next);
+  };
+
+  const movePrev = () => {
+    if (!baseLen) return;
+
+    const current = indexRef.current;
+    const next = current - 1;
+
+    if (next <= lowerLimit) {
+      snapToCenterSameItem(next);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setIndex((p) => p - 1);
+        });
+      });
+      return;
+    }
+
+    setIndex(next);
+  };
+
+  // Autoplay cada 3s (desktop + mobile)
+  useEffect(() => {
+    if (!baseLen) return;
+
+    const t = window.setInterval(() => {
+      moveNext();
+    }, 6000);
+
+    return () => window.clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseLen, stepPx, visibleCount]);
+
+  const goPrev = () => {
+    if (!baseLen) return;
+    movePrev();
   };
 
   const goNext = () => {
-    if (!items.length) return;
-    setIndex((p) => p + 1);
+    if (!baseLen) return;
+    moveNext();
   };
 
+  // TransitionEnd queda como “seguro extra” (por si un click deja el índice en borde)
   const onTrackTransitionEnd = () => {
-    if (!items.length) return;
+    if (!baseLen) return;
 
-    // ✅ WRAP sin huecos: si llegamos a cualquier índice >= items.length, volvemos a mod.
-    if (index >= items.length) {
-      const nextIndex = index % items.length;
-
-      setEnableTransition(false);
-      setIndex(nextIndex);
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => setEnableTransition(true));
-      });
+    const current = indexRef.current;
+    if (current >= upperLimit) {
+      snapToCenterSameItem(current);
+      return;
+    }
+    if (current <= lowerLimit) {
+      snapToCenterSameItem(current);
     }
   };
 
