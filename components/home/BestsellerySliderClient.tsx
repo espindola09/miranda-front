@@ -109,10 +109,18 @@ export default function BestsellerySliderClient({
   // Reset “infinito”
   const [enableTransition, setEnableTransition] = useState(true);
 
-  // Extend para loop suave: clones al final (tantos como visibles)
+  // ✅ MEJORA: loop REAL sin huecos (aunque items < visibleCount)
+  // Extend para loop suave: clones al final (al menos "visibleCount" y, si hace falta, repetimos)
   const extended = useMemo(() => {
     if (!items.length) return [];
-    const clones = items.slice(0, Math.min(visibleCount, items.length));
+
+    const cloneTarget = Math.max(visibleCount, 1);
+
+    const clones: WooProduct[] = [];
+    for (let i = 0; i < cloneTarget; i++) {
+      clones.push(items[i % items.length]);
+    }
+
     return [...items, ...clones];
   }, [items, visibleCount]);
 
@@ -180,9 +188,14 @@ export default function BestsellerySliderClient({
   const onTrackTransitionEnd = () => {
     if (!items.length) return;
 
-    if (index === items.length) {
+    // ✅ MEJORA: si por autoplay/click nos pasamos del final (>=),
+    // volvemos a un índice válido sin transición (no se verá “vacío” nunca).
+    if (index >= items.length) {
+      const nextIndex = index % items.length;
+
       setEnableTransition(false);
-      setIndex(0);
+      setIndex(nextIndex);
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setEnableTransition(true));
       });

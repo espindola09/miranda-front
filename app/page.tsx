@@ -70,7 +70,7 @@ export default async function Home() {
                       "inline-flex items-center justify-center",
                       "bg-black px-10 py-3",
                       "text-sm font-semibold",
-                      "text-white", // sin hover (como pediste)
+                      "!text-white",
                       "cursor-pointer",
                     ].join(" ")}
                   >
@@ -88,6 +88,7 @@ export default async function Home() {
                   alt="Twoja Fototapeta – największy wybór bestsellerów"
                   fill
                   priority
+                  fetchPriority="high" // ✅ MEJORA LCP: fuerza fetchpriority=high (lo que te pide Lighthouse)
                   sizes="(max-width: 1024px) 100vw, 70vw"
                   className="object-cover"
                 />
@@ -99,7 +100,10 @@ export default async function Home() {
 
       {/* ✅ BESTSELLERY SLIDER (nuevo) */}
       {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
-        <BestsellerySliderClient products={bestsellery} viewAllHref="/kategoria-produktu/bestsellery" />
+        <BestsellerySliderClient
+          products={bestsellery}
+          viewAllHref="/kategoria-produktu/bestsellery"
+        />
       ) : null}
 
       {/* CUERPO (vacío por ahora) */}
