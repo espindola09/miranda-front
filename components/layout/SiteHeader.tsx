@@ -50,58 +50,62 @@ function IconCart(props: React.SVGProps<SVGSVGElement>) {
 export default function SiteHeader() {
   return (
     <header className="w-full">
-      {/* TOP BAR */}
-      <div className="bg-[#c9b086] text-black">
-        <div className="mx-auto flex h-8 max-w-7xl items-center justify-center px-4 text-xs font-semibold tracking-wide">
-          <span className="opacity-90">Promocja</span>
-          <span className="mx-3 opacity-50">—</span>
-          <span className="opacity-90">na wszystko</span>
-          <span className="mx-3 opacity-50">|</span>
-          <span className="text-red-600 font-extrabold">365 dni na zwrot</span>
-          <span className="mx-3 opacity-50">|</span>
-          <span className="opacity-90">100 000+ zadowolonych klientów</span>
+      {/* TOP BAR (full width) */}
+      <div className="w-full bg-[#c9b086] text-black">
+        <div className="w-full px-6">
+          <div className="flex h-8 items-center justify-center text-xs font-semibold tracking-wide">
+            <span className="opacity-90">Promocja</span>
+            <span className="ml-2 text-red-600 font-extrabold">-40%</span>
+            <span className="mx-3 opacity-50">na wszystko</span>
+            <span className="mx-3 opacity-50">|</span>
+            <span className="text-red-600 font-extrabold">365 dni na zwrot</span>
+            <span className="mx-3 opacity-50">|</span>
+            <span className="opacity-90">100 000+ zadowolonych klientów</span>
+          </div>
         </div>
       </div>
 
-      {/* MAIN HEADER */}
-      <div className="bg-white text-black border-b border-black/10">
-        <div className="mx-auto max-w-7xl px-4">
-          <div className="flex h-16 items-center justify-between gap-6">
-            {/* LOGO */}
-            <Link href="/" className="flex items-center gap-3">
-              {/* Placeholder logo: reemplazalo por tu SVG/PNG */}
-              <div className="h-10 w-10 rounded-full border border-[#c9b086] grid place-items-center">
-                <span className="text-[#c9b086] font-black">M</span>
-              </div>
-              <span className="hidden sm:block font-semibold tracking-wide">
-                Miranda Morris
-              </span>
+      {/* MAIN HEADER (full width) */}
+      <div className="w-full bg-white text-black border-b border-black/10">
+        <div className="w-full px-6">
+          <div className="flex h-16 items-center gap-6">
+            {/* LOGO (izquierda) */}
+            <Link href="/" className="flex items-center shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://drukdekoracje.pl/wp-content/uploads/2024/11/cropped-logomm-50x44.png"
+                alt="Logo"
+                className="h-10 w-auto"
+                loading="eager"
+              />
             </Link>
 
-            {/* MENU (desktop) */}
-            <nav className="hidden lg:flex items-center gap-6 text-[13px] font-semibold tracking-wide">
-              <Link className="hover:text-[#c9b086] transition" href="/sklep-fototapety">
-                FOTOTAPETY
-              </Link>
-              <Link className="hover:text-[#c9b086] transition" href="/naklejki">
-                NAKLEJKI
-              </Link>
-              <Link className="hover:text-[#c9b086] transition" href="/obrazy-i-plakaty">
-                OBRAZY I PLAKATY
-              </Link>
-              <Link className="hover:text-[#c9b086] transition" href="/moj-projekt">
-                MÓJ PROJEKT
-              </Link>
-              <Link className="hover:text-[#c9b086] transition" href="/blog">
-                BLOG
-              </Link>
-              <Link className="hover:text-[#c9b086] transition" href="/kontakt">
-                KONTAKT
-              </Link>
-            </nav>
+            {/* ✅ CENTRO: ocupa TODO el espacio disponible, y empuja menú hacia la derecha */}
+            <div className="hidden lg:flex flex-1 items-center justify-end">
+              <nav className="flex items-center justify-end gap-8 text-[13px] font-semibold tracking-wide">
+                <Link className="hover:text-[#c9b086] transition" href="/sklep-fototapety">
+                  FOTOTAPETY
+                </Link>
+                <Link className="hover:text-[#c9b086] transition" href="/naklejki">
+                  NAKLEJKI
+                </Link>
+                <Link className="hover:text-[#c9b086] transition" href="/obrazy-i-plakaty">
+                  OBRAZY I PLAKATY
+                </Link>
+                <Link className="hover:text-[#c9b086] transition" href="/moj-projekt">
+                  MÓJ PROJEKT
+                </Link>
+                <Link className="hover:text-[#c9b086] transition" href="/blog">
+                  BLOG
+                </Link>
+                <Link className="hover:text-[#c9b086] transition" href="/kontakt">
+                  KONTAKT
+                </Link>
+              </nav>
+            </div>
 
-            {/* ICONS */}
-            <div className="flex items-center gap-3">
+            {/* ICONS (derecha, fijo) */}
+            <div className="ml-auto flex items-center gap-3 shrink-0">
               <button
                 type="button"
                 className="h-9 w-9 rounded-full border border-black/10 hover:border-[#c9b086] hover:text-[#c9b086] transition grid place-items-center"
@@ -136,7 +140,6 @@ export default function SiteHeader() {
                 title="Koszyk"
               >
                 <IconCart className="h-5 w-5" />
-                {/* Badge cantidad (placeholder) */}
                 <span className="absolute -right-1 -top-1 h-5 min-w-5 px-1 rounded-full bg-[#c9b086] text-black text-[11px] font-extrabold grid place-items-center">
                   0
                 </span>
