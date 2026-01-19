@@ -118,7 +118,7 @@ const MATERIALS: Material[] = [
       "Maks. szerokość brytu: 100 cm",
     ],
     image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/1-lateksowa-600x400-1.webp",
+      "https://drukdekoracje.pl/wp-content/uploads/2026/01/Flizelinowa-Gladka-180g.webp",
   },
   {
     id: "flizelina-premium-220g",
@@ -139,7 +139,7 @@ const MATERIALS: Material[] = [
       "Maks. szerokość brytu: 100 cm",
     ],
     image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
+      "https://drukdekoracje.pl/wp-content/uploads/2026/01/Flizelinowa-Gladka-PREMIUM-220g.webp",
   },
   {
     id: "winyl-beton-360g",
@@ -160,7 +160,7 @@ const MATERIALS: Material[] = [
       "Maks. szerokość brytu: 100 cm",
     ],
     image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
+      "https://drukdekoracje.pl/wp-content/uploads/2026/01/Winyl-na-flizelinie-CONCRETE-350g.webp",
   },
   {
     id: "winyl-linen-360g",
@@ -181,7 +181,7 @@ const MATERIALS: Material[] = [
       "Maks. szerokość brytu: 100 cm",
     ],
     image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
+      "https://drukdekoracje.pl/wp-content/uploads/2026/01/Winyl-na-flizelinie-COTTON-350g.webp",
   },
   {
     id: "brush-360g",
@@ -202,7 +202,7 @@ const MATERIALS: Material[] = [
       "Maks. szerokość brytu: 100 cm",
     ],
     image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
+      "https://drukdekoracje.pl/wp-content/uploads/2026/01/Winyl-na-flizelinie-PAINT-350g.webp",
   },
   {
     id: "samoprzylepna",
@@ -221,7 +221,7 @@ const MATERIALS: Material[] = [
       "Maks. szerokość brytu: 100 cm",
     ],
     image:
-      "https://drukdekoracje.pl/wp-content/uploads/2024/12/2-flizelinowa-premium-600x400-1.webp",
+      "https://drukdekoracje.pl/wp-content/uploads/2026/01/Samoprzylepna-CANVAS-250g.webp",
   },
 ];
 
