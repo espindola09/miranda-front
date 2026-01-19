@@ -109,17 +109,13 @@ export default function BestsellerySliderClient({
   // Reset “infinito”
   const [enableTransition, setEnableTransition] = useState(true);
 
-  // ✅ MEJORA: loop REAL sin huecos (aunque items < visibleCount)
-  // Extend para loop suave: clones al final (al menos "visibleCount" y, si hace falta, repetimos)
+  // ✅ MEJORA CLAVE:
+  // Clonamos MÁS que visibleCount para que NUNCA falten cards en viewport al llegar al final.
   const extended = useMemo(() => {
     if (!items.length) return [];
 
-    const cloneTarget = Math.max(visibleCount, 1);
-
-    const clones: WooProduct[] = [];
-    for (let i = 0; i < cloneTarget; i++) {
-      clones.push(items[i % items.length]);
-    }
+    const cloneCount = Math.min(items.length, visibleCount + 2);
+    const clones = items.slice(0, cloneCount);
 
     return [...items, ...clones];
   }, [items, visibleCount]);
@@ -188,8 +184,7 @@ export default function BestsellerySliderClient({
   const onTrackTransitionEnd = () => {
     if (!items.length) return;
 
-    // ✅ MEJORA: si por autoplay/click nos pasamos del final (>=),
-    // volvemos a un índice válido sin transición (no se verá “vacío” nunca).
+    // ✅ WRAP sin huecos: si llegamos a cualquier índice >= items.length, volvemos a mod.
     if (index >= items.length) {
       const nextIndex = index % items.length;
 
@@ -228,7 +223,6 @@ export default function BestsellerySliderClient({
             className="relative overflow-hidden"
             aria-label="Bestsellery"
           >
-            {/* ✅ SOLO 2 FLECHAS (mobile + desktop). Quitamos las “decorativas” para no duplicar. */}
             <button
               type="button"
               onClick={goPrev}
@@ -236,7 +230,6 @@ export default function BestsellerySliderClient({
                 "absolute left-3 z-20 grid place-items-center rounded-full",
                 "border border-black/10 bg-white/90 shadow-sm",
                 "hover:border-[#c9b086] transition",
-                // en mobile subimos un poco para que se vea “dentro” de la imagen (como tu referencia)
                 "top-[38%] -translate-y-1/2",
                 "h-10 w-10 sm:h-11 sm:w-11",
                 "md:top-1/2",
@@ -294,11 +287,8 @@ export default function BestsellerySliderClient({
                     ref={i === 0 ? firstCardRef : undefined}
                     className={[
                       "shrink-0",
-                      // ✅ mobile: 1 card EXACTA (sin corte)
                       "w-full",
-                      // ✅ md: 2 visibles
                       "md:w-[calc((100%-24px)/2)]",
-                      // ✅ lg+: 4 visibles EXACTAS (3 gaps * 24px)
                       "lg:w-[calc((100%-72px)/4)]",
                     ].join(" ")}
                   >
@@ -377,7 +367,7 @@ export default function BestsellerySliderClient({
               "inline-flex items-center justify-center",
               "bg-[#c9b086] px-7 py-3",
               "text-sm font-extrabold tracking-wide",
-              "text-white!", // ✅ fuerza blanco
+              "text-white!",
               "hover:opacity-90 transition",
             ].join(" ")}
           >
