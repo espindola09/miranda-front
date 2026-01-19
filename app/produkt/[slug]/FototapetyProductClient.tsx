@@ -102,7 +102,7 @@ type Material = {
 const MATERIALS: Material[] = [
   {
     id: "flizelina-170g",
-    name: "Flizelinowa Gładka 170 g",
+    name: "Flizelinowa Gładka 180g",
     subtitle: "Uniwersalna i lekka fototapeta do codziennych wnętrz",
     desc:
       "Klasyczna tapeta flizelinowa o gładkiej, matowej powierzchni. Dobra jakość w atrakcyjnej cenie, idealna do mieszkań, biur i przestrzeni o umiarkowanym użytkowaniu.",
@@ -122,7 +122,7 @@ const MATERIALS: Material[] = [
   },
   {
     id: "flizelina-premium-220g",
-    name: "Flizelinowa Gładka PREMIUM 220 g",
+    name: "Flizelinowa Gładka PREMIUM 220g",
     subtitle: "Wyższa gramatura, lepsza trwałość i jakość druku",
     desc:
       "Wersja premium tapety flizelinowej, przeznaczona do bardziej wymagających realizacji. Grubszy materiał zapewnia lepsze krycie ściany oraz bardziej elegancki efekt końcowy.",
@@ -143,7 +143,7 @@ const MATERIALS: Material[] = [
   },
   {
     id: "winyl-beton-360g",
-    name: "Winyl na flizelinie BETON 360 g",
+    name: "Winyl na flizelinie CONCRETE 350g",
     subtitle: "Wyrazista struktura betonu i najwyższa trwałość",
     desc:
       "Tapeta winylowa o realistycznej strukturze betonu. Bardzo trwała i odporna, polecana do nowoczesnych wnętrz oraz przestrzeni komercyjnych.",
@@ -164,7 +164,7 @@ const MATERIALS: Material[] = [
   },
   {
     id: "winyl-linen-360g",
-    name: "Winyl na flizelinie LINEN 360 g",
+    name: "Winyl na flizelinie COTTON 350g",
     subtitle: "Elegancka struktura płótna – wybór projektantów wnętrz",
     desc:
       "Tapeta winylowa o strukturze płótna malarskiego (canvas). Bardzo popularna w aranżacjach premium, nadaje wnętrzom miękkości i elegancji.",
@@ -185,7 +185,7 @@ const MATERIALS: Material[] = [
   },
   {
     id: "brush-360g",
-    name: "Winyl na flizelinie BRUSH 360 g",
+    name: "Winyl na flizelinie PAINT 350g",
     subtitle: "Dynamiczna faktura pociągnięcia pędzla",
     desc:
       "Tapeta winylowa o wyczuwalnej strukturze pędzla, która dodaje ścianie głębi i artystycznego charakteru. Często wybierana do nowoczesnych i designerskich wnętrz.",
@@ -206,7 +206,7 @@ const MATERIALS: Material[] = [
   },
   {
     id: "samoprzylepna",
-    name: "Fototapeta samoprzylepna",
+    name: "Samoprzylepna CANVAS 250g",
     subtitle: "Szybki montaż bez kleju – idealna na gładkie powierzchnie",
     desc:
       "Fototapeta z warstwą samoprzylepną, przeznaczona do idealnie gładkich podłoży. Prosty i szybki montaż bez użycia kleju. Nie zaleca się aplikacji na farby lateksowe i zmywalne.",
