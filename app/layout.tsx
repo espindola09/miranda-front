@@ -5,6 +5,9 @@ import "./globals.css";
 /* ✅ HEADER global (todas las páginas) */
 import SiteHeader from "@/components/layout/SiteHeader";
 
+/* ✅ FOOTER global (todas las páginas) */
+import SiteFooter from "@/components/layout/SiteFooter";
+
 /* ✅ ULUBIONE (wishlist) — Provider + Modal global */
 import UlubioneProvider from "@/components/ulubione/UlubioneProvider";
 import UlubioneModal from "@/components/ulubione/UlubioneModal";
@@ -38,17 +41,22 @@ export default function RootLayout({
           geistSans.variable,
           geistMono.variable,
           "antialiased",
-          // ✅ FORZAR THEME GLOBAL (blanco/negro) para TODAS las páginas
+          // ✅ THEME GLOBAL (blanco / negro + dorado)
           "min-h-screen bg-white text-black",
         ].join(" ")}
       >
         {/* ✅ Provider global para que el corazón funcione en TODA la app */}
         <UlubioneProvider>
-          {/* ✅ Header global */}
-          <SiteHeader />
+          {/* ✅ Layout global: Header + Page + Footer */}
+          <div className="min-h-screen flex flex-col">
+            <SiteHeader />
 
-          {/* ✅ Contenido de cada página */}
-          {children}
+            {/* ✅ Contenido de cada página */}
+            <div className="flex-1">{children}</div>
+
+            {/* ✅ Footer global (ancho completo) */}
+            <SiteFooter />
+          </div>
 
           {/* ✅ Modal global (se abre al agregar a Ulubione) */}
           <UlubioneModal />
