@@ -148,34 +148,22 @@ export default function SiteFooter() {
             </h4>
             <ul className="space-y-3 text-sm">
               <li>
-                <Link
-                  href="/fototapety"
-                  className="hover:text-[#c9b086] transition"
-                >
+                <Link href="/fototapety" className="hover:text-[#c9b086] transition">
                   Fototapety
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/naklejki"
-                  className="hover:text-[#c9b086] transition"
-                >
+                <Link href="/naklejki" className="hover:text-[#c9b086] transition">
                   Naklejki ścienne
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/plakaty"
-                  className="hover:text-[#c9b086] transition"
-                >
+                <Link href="/plakaty" className="hover:text-[#c9b086] transition">
                   Plakaty
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/obrazy"
-                  className="hover:text-[#c9b086] transition"
-                >
+                <Link href="/obrazy" className="hover:text-[#c9b086] transition">
                   Obrazy
                 </Link>
               </li>
@@ -213,11 +201,14 @@ export default function SiteFooter() {
         <div className="mx-auto max-w-7xl px-6 py-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between text-sm text-black">
           <div>Copyright © 2026 Graften.pl</div>
 
-          <div className="flex items-center gap-4">
-            <img src="/payments/visa.svg" alt="Visa" className="h-5" />
-            <img src="/payments/mastercard.svg" alt="Mastercard" className="h-5" />
-            <img src="/payments/applepay.svg" alt="Apple Pay" className="h-5" />
-            <img src="/payments/googlepay.svg" alt="Google Pay" className="h-5" />
+          {/* ✅ IMAGEN ÚNICA DE MÉTODOS DE PAGO */}
+          <div className="flex justify-center md:justify-end">
+            <img
+              src="https://websitedemos.net/home-garden-decor-02/wp-content/uploads/sites/1034/2022/02/payment-image.png"
+              alt="Metody płatności"
+              className="h-5 w-auto object-contain"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>
