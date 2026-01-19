@@ -135,6 +135,16 @@ export default function BestsellerySliderClient({
   const [enableTransition, setEnableTransition] = useState(true);
 
   /**
+   * ✅ Suavidad sin temblor + clicks rápidos:
+   * - No disparamos setIndex mientras hay transición en curso (temblor)
+   * - En vez de eso, acumulamos clicks en queuedDeltaRef
+   * - Al terminar la transición, consumimos la cola inmediatamente (se siente rápido)
+   */
+  const isAnimatingRef = useRef(false);
+  const queuedDeltaRef = useRef(0);
+  const isSnappingRef = useRef(false);
+
+  /**
    * ✅ Loop sin huecos:
    * - base suficientemente grande
    * - pista = base repetida muchas veces
@@ -166,10 +176,19 @@ export default function BestsellerySliderClient({
   useEffect(() => {
     if (!baseLen) return;
 
+    // reset de cola/estado
+    isAnimatingRef.current = false;
+    queuedDeltaRef.current = 0;
+    isSnappingRef.current = true;
+
     setEnableTransition(false);
     setIndex(center);
+
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => setEnableTransition(true));
+      requestAnimationFrame(() => {
+        setEnableTransition(true);
+        isSnappingRef.current = false;
+      });
     });
   }, [baseLen, center, visibleCount]);
 
@@ -206,60 +225,74 @@ export default function BestsellerySliderClient({
     const mod = ((targetIndex % baseLen) + baseLen) % baseLen;
     const snapIndex = center + mod;
 
+    isSnappingRef.current = true;
+    isAnimatingRef.current = false; // snap no es animación visible
+
     setEnableTransition(false);
     setIndex(snapIndex);
 
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => setEnableTransition(true));
+      requestAnimationFrame(() => {
+        setEnableTransition(true);
+        isSnappingRef.current = false;
+      });
     });
   };
 
-  const moveNext = () => {
+  const applyMove = (delta: number) => {
     if (!baseLen) return;
 
     const current = indexRef.current;
-    const next = current + 1;
+    const next = current + delta;
 
-    // Si estamos cerca del borde derecho, primero snap invisible al centro
-    // y recién ahí seguimos moviendo (sin mostrar huecos nunca).
-    if (next >= upperLimit) {
+    // Evitar huecos: si estamos por pasar el límite, primero snap invisible al centro
+    if (delta > 0 && next >= upperLimit) {
       snapToCenterSameItem(next);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+          isAnimatingRef.current = true;
           setIndex((p) => p + 1);
         });
       });
       return;
     }
 
-    setIndex(next);
-  };
-
-  const movePrev = () => {
-    if (!baseLen) return;
-
-    const current = indexRef.current;
-    const next = current - 1;
-
-    if (next <= lowerLimit) {
+    if (delta < 0 && next <= lowerLimit) {
       snapToCenterSameItem(next);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
+          isAnimatingRef.current = true;
           setIndex((p) => p - 1);
         });
       });
       return;
     }
 
+    // Movimiento normal
+    isAnimatingRef.current = true;
     setIndex(next);
   };
 
-  // Autoplay cada 3s (desktop + mobile)
+  const requestMove = (delta: number) => {
+    if (!baseLen) return;
+    if (isSnappingRef.current) return;
+
+    // Si está animando, acumulamos y salimos (sin temblor)
+    if (isAnimatingRef.current) {
+      // limitamos cola para no acumular infinito
+      queuedDeltaRef.current = Math.max(-20, Math.min(20, queuedDeltaRef.current + delta));
+      return;
+    }
+
+    applyMove(delta);
+  };
+
+  // Autoplay cada 6s (desktop + mobile)
   useEffect(() => {
     if (!baseLen) return;
 
     const t = window.setInterval(() => {
-      moveNext();
+      requestMove(1);
     }, 6000);
 
     return () => window.clearInterval(t);
@@ -268,25 +301,41 @@ export default function BestsellerySliderClient({
 
   const goPrev = () => {
     if (!baseLen) return;
-    movePrev();
+    requestMove(-1);
   };
 
   const goNext = () => {
     if (!baseLen) return;
-    moveNext();
+    requestMove(1);
   };
 
-  // TransitionEnd queda como “seguro extra” (por si un click deja el índice en borde)
+  // TransitionEnd: liberamos lock y consumimos cola inmediatamente (rápido pero suave)
   const onTrackTransitionEnd = () => {
     if (!baseLen) return;
+    if (isSnappingRef.current) return;
 
     const current = indexRef.current;
+
+    // seguro extra en bordes
     if (current >= upperLimit) {
       snapToCenterSameItem(current);
       return;
     }
     if (current <= lowerLimit) {
       snapToCenterSameItem(current);
+      return;
+    }
+
+    // terminó animación visible
+    isAnimatingRef.current = false;
+
+    // Consumimos cola: ejecutamos el siguiente paso ENSEGUIDA (se siente rápido)
+    const q = queuedDeltaRef.current;
+    if (q !== 0) {
+      const step = q > 0 ? 1 : -1;
+      queuedDeltaRef.current = q - step;
+      // disparo inmediato del próximo paso
+      requestMove(step);
     }
   };
 
@@ -353,7 +402,7 @@ export default function BestsellerySliderClient({
             {/* Track */}
             <div
               className={[
-                "flex gap-6",
+                "flex gap-6 will-change-transform",
                 enableTransition
                   ? "transition-transform duration-500 ease-in-out"
                   : "transition-none",
