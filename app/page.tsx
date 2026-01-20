@@ -70,7 +70,7 @@ export default async function Home() {
                       "inline-flex items-center justify-center",
                       "bg-black px-10 py-3",
                       "text-sm font-semibold",
-                      "!text-white",
+                      "text-white!",
                       "cursor-pointer",
                     ].join(" ")}
                   >
@@ -82,7 +82,8 @@ export default async function Home() {
 
             {/* PANEL DERECHO (imagen) */}
             <div className="relative w-full">
-              <div className="relative h-90 w-full sm:h-105 lg:h-130 xl:h-140">
+              {/* ✅ MÁS ALTO (real): alturas explícitas para que se note */}
+              <div className="relative w-full h-130 sm:h-150 lg:h-180 xl:h-205">
                 <Image
                   src="https://drukdekoracje.pl/wp-content/uploads/2025/11/AdobeStock_6609484541HD-v3-low.webp"
                   alt="Twoja Fototapeta – największy wybór bestsellerów"
