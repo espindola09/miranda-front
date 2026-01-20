@@ -48,16 +48,12 @@ function IconCart(props: React.SVGProps<SVGSVGElement>) {
 }
 
 /**
- * ✅ MegaMenu (desktop) — sin parpadeo:
- * - El panel NO se monta/desmonta: siempre está en el DOM.
- * - Se muestra con CSS (opacity/visibility/transform) usando group-hover y focus-within.
- * - Incluye "bridge" invisible para evitar cierres por micro-gap al mover el mouse.
- *
- * ⚠️ Por ahora el contenido es estático (como primer paso).
- * Próximo paso: hacerlo dinámico con categorías/atributos desde WP.
+ * ✅ MegaMenu (desktop) — full width REAL (viewport)
+ * - El panel ocupa TODO el ancho del viewport (fixed inset-x-0).
+ * - El panel empieza EXACTO debajo del header (usa CSS var --mm-header-bottom).
+ * - Sin flicker: siempre está montado, solo cambia visibilidad con CSS.
  */
 function FototapetyMegaMenuDesktop() {
-  // ✅ Primer versión: estructura tipo tu captura, sin lógica dinámica todavía
   const tematy = [
     "Abstrakcja",
     "Astronomia i Kosmos",
@@ -85,191 +81,129 @@ function FototapetyMegaMenuDesktop() {
   ];
 
   const tiles = [
-    {
-      label: "Drzewa",
-      href: "/kategoria-produktu/drzewa",
-      img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/drzewa.webp",
-    },
-    {
-      label: "Dzieci",
-      href: "/kategoria-produktu/dzieci",
-      img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/dzieci.webp",
-    },
-    {
-      label: "Miasta",
-      href: "/kategoria-produktu/miasta",
-      img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/miasta.webp",
-    },
-    {
-      label: "Kwiaty",
-      href: "/kategoria-produktu/kwiaty",
-      img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/kwiaty.webp",
-    },
-    {
-      label: "Góry",
-      href: "/kategoria-produktu/gory",
-      img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/gory.webp",
-    },
-    {
-      label: "Abstrakcja",
-      href: "/kategoria-produktu/abstrakcja",
-      img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/abstrakcja.webp",
-    },
+    { label: "Drzewa", href: "/kategoria-produktu/drzewa", img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/drzewa.webp" },
+    { label: "Dzieci", href: "/kategoria-produktu/dzieci", img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/dzieci.webp" },
+    { label: "Miasta", href: "/kategoria-produktu/miasta", img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/miasta.webp" },
+    { label: "Kwiaty", href: "/kategoria-produktu/kwiaty", img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/kwiaty.webp" },
+    { label: "Góry", href: "/kategoria-produktu/gory", img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/gory.webp" },
+    { label: "Abstrakcja", href: "/kategoria-produktu/abstrakcja", img: "https://drukdekoracje.pl/wp-content/uploads/2025/01/abstrakcja.webp" },
   ];
+
+  // helper simple para slugs “aprox” (luego lo hacemos 100% dinámico con categorías reales)
+  const toSlug = (s: string) =>
+    s
+      .toLowerCase()
+      .trim()
+      .replaceAll(" / ", "-")
+      .replaceAll("/", "-")
+      .replaceAll(" ", "-")
+      .replaceAll("ó", "o")
+      .replaceAll("ł", "l")
+      .replaceAll("ą", "a")
+      .replaceAll("ę", "e")
+      .replaceAll("ś", "s")
+      .replaceAll("ż", "z")
+      .replaceAll("ź", "z")
+      .replaceAll("ć", "c")
+      .replaceAll("ń", "n");
 
   return (
     <div className="relative group">
       {/* Trigger */}
-      <Link
-        className="hover:text-[#c9b086] transition"
-        href="/sklep-fototapety"
-      >
+      <Link className="hover:text-[#c9b086] transition" href="/sklep-fototapety">
         FOTOTAPETY
       </Link>
 
-      {/* Panel: siempre montado -> no flicker */}
+      {/* ✅ Panel FULL WIDTH REAL: anclado al viewport */}
       <div
         className={[
-          "absolute left-1/2 top-full z-50 -translate-x-1/2",
-          "w-295 max-w-[calc(100vw-48px)]",
-          "rounded-md bg-white shadow-xl ring-1 ring-black/5",
+          "fixed inset-x-0 z-50",
+          "top-(--mm-header-bottom,64px)",
+          "bg-white shadow-xl ring-1 ring-black/5",
           "opacity-0 invisible pointer-events-none translate-y-2",
           "transition duration-150 ease-out",
           "group-hover:opacity-100 group-hover:visible group-hover:pointer-events-auto group-hover:translate-y-0",
           "group-focus-within:opacity-100 group-focus-within:visible group-focus-within:pointer-events-auto group-focus-within:translate-y-0",
         ].join(" ")}
       >
-        {/* Bridge anti-gap */}
+        {/* Bridge anti-gap (evita que se cierre al “cruzar” del link al panel) */}
         <div className="absolute -top-2 left-0 h-2 w-full" />
 
-        <div className="grid grid-cols-[260px_1fr_1fr_340px] gap-10 p-8">
-          {/* Col 1: Polecane */}
-          <div>
-            <div className="text-xs font-semibold tracking-widest text-black/60">
-              POLECANE
-            </div>
+        {/* Contenido centrado (panel full width, contenido con max-width) */}
+        <div className="mx-auto w-full max-w-7xl px-6">
+          <div className="grid grid-cols-[260px_1fr_1fr_340px] gap-10 py-8">
+            {/* Col 1: Polecane */}
+            <div>
+              <div className="text-xs font-semibold tracking-widest text-black/60">POLECANE</div>
 
-            <div className="mt-4 space-y-2 text-sm">
-              <Link className="block hover:underline" href="/fototapety-porady">
-                Rodzaje fototapet - porady
-              </Link>
+              <div className="mt-4 space-y-2 text-sm">
+                <Link className="block hover:underline" href="/fototapety-porady">
+                  Rodzaje fototapet - porady
+                </Link>
 
-              <Link
-                className="mt-4 inline-flex items-center gap-3 font-semibold hover:underline"
-                href="/sklep-fototapety"
-              >
-                <span className="inline-grid h-5 w-5 place-items-center rounded-sm border border-black/20">
-                  <span className="h-2.5 w-2.5 border border-black/40" />
-                </span>
-                Pokaż wszystkie
-              </Link>
+                <Link className="mt-4 inline-flex items-center gap-3 font-semibold hover:underline" href="/sklep-fototapety">
+                  <span className="inline-grid h-5 w-5 place-items-center rounded-sm border border-black/20">
+                    <span className="h-2.5 w-2.5 border border-black/40" />
+                  </span>
+                  Pokaż wszystkie
+                </Link>
 
-              <div className="mt-4 text-sm font-semibold">
-                Bestsellery - pokaż wszystkie
+                <div className="mt-4 text-sm font-semibold">Bestsellery - pokaż wszystkie</div>
               </div>
             </div>
-          </div>
 
-          {/* Col 2: Tematy */}
-          <div>
-            <div className="text-xs font-semibold tracking-widest text-black/60">
-              Tematy
-            </div>
+            {/* Col 2: Tematy */}
+            <div>
+              <div className="text-xs font-semibold tracking-widest text-black/60">Tematy</div>
 
-            <div className="mt-4 max-h-90 space-y-2 overflow-auto pr-2 text-sm">
-              {tematy.map((t) => (
-                <Link
-                  key={t}
-                  className="block hover:underline"
-                  href={`/kategoria-produktu/${encodeURIComponent(
-                    t.toLowerCase()
-                      .replaceAll(" ", "-")
-                      .replaceAll("ó", "o")
-                      .replaceAll("ł", "l")
-                      .replaceAll("ą", "a")
-                      .replaceAll("ę", "e")
-                      .replaceAll("ś", "s")
-                      .replaceAll("ż", "z")
-                      .replaceAll("ź", "z")
-                      .replaceAll("ć", "c")
-                      .replaceAll("ń", "n")
-                  )}`}
-                >
-                  {t}
+              <div className="mt-4 max-h-90 space-y-2 overflow-auto pr-2 text-sm">
+                {tematy.map((t) => (
+                  <Link key={t} className="block hover:underline" href={`/kategoria-produktu/${toSlug(t)}`}>
+                    {t}
+                  </Link>
+                ))}
+
+                <Link href="/kategoria-produktu/fototapety" className="mt-3 block font-semibold hover:underline">
+                  Pokaż wszystkie
                 </Link>
-              ))}
-
-              <Link
-                href="/kategoria-produktu/fototapety"
-                className="mt-3 block font-semibold hover:underline"
-              >
-                Pokaż wszystkie
-              </Link>
-            </div>
-          </div>
-
-          {/* Col 3: Przeznaczenia */}
-          <div>
-            <div className="text-xs font-semibold tracking-widest text-black/60">
-              Przeznaczenia
+              </div>
             </div>
 
-            <div className="mt-4 max-h-90 space-y-2 overflow-auto pr-2 text-sm">
-              {przeznaczenia.map((p) => (
-                <Link
-                  key={p}
-                  className="block hover:underline"
-                  href={`/kategoria-produktu/${encodeURIComponent(
-                    p.toLowerCase()
-                      .replaceAll(" ", "-")
-                      .replaceAll("/", "-")
-                      .replaceAll("ó", "o")
-                      .replaceAll("ł", "l")
-                      .replaceAll("ą", "a")
-                      .replaceAll("ę", "e")
-                      .replaceAll("ś", "s")
-                      .replaceAll("ż", "z")
-                      .replaceAll("ź", "z")
-                      .replaceAll("ć", "c")
-                      .replaceAll("ń", "n")
-                  )}`}
-                >
-                  {p}
+            {/* Col 3: Przeznaczenia */}
+            <div>
+              <div className="text-xs font-semibold tracking-widest text-black/60">Przeznaczenia</div>
+
+              <div className="mt-4 max-h-90 space-y-2 overflow-auto pr-2 text-sm">
+                {przeznaczenia.map((p) => (
+                  <Link key={p} className="block hover:underline" href={`/kategoria-produktu/${toSlug(p)}`}>
+                    {p}
+                  </Link>
+                ))}
+
+                <Link href="/kategoria-produktu/przeznaczenia" className="mt-3 block font-semibold hover:underline">
+                  Pokaż Wszystkie
                 </Link>
-              ))}
-
-              <Link
-                href="/kategoria-produktu/przeznaczenia"
-                className="mt-3 block font-semibold hover:underline"
-              >
-                Pokaż Wszystkie
-              </Link>
+              </div>
             </div>
-          </div>
 
-          {/* Col 4: Tiles */}
-          <div className="pl-2">
-            <div className="grid grid-cols-3 gap-4">
-              {tiles.map((x) => (
-                <Link
-                  key={x.label}
-                  href={x.href}
-                  className="group/tile text-center"
-                >
-                  <div className="relative mx-auto h-[92px] w-23 overflow-hidden rounded-xl bg-black/5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={x.img}
-                      alt={x.label}
-                      className="h-full w-full object-cover transition-transform duration-200 group-hover/tile:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
-                  <div className="mt-2 text-xs font-semibold text-black">
-                    {x.label}
-                  </div>
-                </Link>
-              ))}
+            {/* Col 4: Tiles */}
+            <div className="pl-2">
+              <div className="grid grid-cols-3 gap-4">
+                {tiles.map((x) => (
+                  <Link key={x.label} href={x.href} className="group/tile text-center">
+                    <div className="relative mx-auto h-23 w-23 overflow-hidden rounded-xl bg-black/5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={x.img}
+                        alt={x.label}
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover/tile:scale-105"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="mt-2 text-xs font-semibold text-black">{x.label}</div>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -279,8 +213,38 @@ function FototapetyMegaMenuDesktop() {
 }
 
 export default function SiteHeader() {
+  // ✅ Medimos la altura total del header para posicionar el mega panel PERFECTO debajo
+  const headerRef = React.useRef<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    if (!headerRef.current) return;
+
+    const el = headerRef.current;
+
+    const setVar = () => {
+      const rect = el.getBoundingClientRect();
+      // top del panel = “altura visible del header”
+      const h = Math.max(0, Math.round(rect.height));
+      document.documentElement.style.setProperty("--mm-header-bottom", `${h}px`);
+    };
+
+    setVar();
+
+    const ro = new ResizeObserver(() => setVar());
+    ro.observe(el);
+
+    window.addEventListener("resize", setVar);
+    window.addEventListener("scroll", setVar, { passive: true });
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", setVar);
+      window.removeEventListener("scroll", setVar);
+    };
+  }, []);
+
   return (
-    <header className="w-full">
+    <header ref={headerRef as any} className="w-full">
       {/* TOP BAR (full width) */}
       <div className="w-full bg-[#c9b086] text-black">
         <div className="w-full px-3 sm:px-6">
@@ -318,7 +282,6 @@ export default function SiteHeader() {
             {/* MENU (desktop only) */}
             <div className="hidden lg:flex flex-1 items-center justify-end">
               <nav className="relative flex items-center justify-end gap-8 text-[13px] font-semibold tracking-wide">
-                {/* ✅ REEMPLAZO: FOTOTAPETY con mega-menu */}
                 <FototapetyMegaMenuDesktop />
 
                 <Link className="hover:text-[#c9b086] transition" href="/naklejki">
