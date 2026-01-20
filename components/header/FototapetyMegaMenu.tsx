@@ -19,7 +19,7 @@ export default async function FototapetyMegaMenu() {
       {/* Panel: siempre en DOM, sin parpadeo */}
       <div
         className={[
-          "absolute left-0 top-full z-50 w-[1100px] max-w-[calc(100vw-48px)]",
+          "absolute left-0 top-full z-50 w-275 max-w-[calc(100vw-48px)]",
           "rounded-md bg-white shadow-xl ring-1 ring-black/5",
           "opacity-0 invisible pointer-events-none translate-y-2",
           "transition duration-150 ease-out",
@@ -49,7 +49,7 @@ export default async function FototapetyMegaMenu() {
           {/* Col 2: Tematy */}
           <div>
             <div className="text-xs font-semibold tracking-widest text-black/60">Tematy</div>
-            <div className="mt-4 max-h-[340px] space-y-2 overflow-auto pr-2 text-sm">
+            <div className="mt-4 max-h-85 space-y-2 overflow-auto pr-2 text-sm">
               {data.tematy.map((c) => (
                 <Link
                   key={c.id}
@@ -69,7 +69,7 @@ export default async function FototapetyMegaMenu() {
           {/* Col 3: Przeznaczenia */}
           <div>
             <div className="text-xs font-semibold tracking-widest text-black/60">Przeznaczenia</div>
-            <div className="mt-4 max-h-[340px] space-y-2 overflow-auto pr-2 text-sm">
+            <div className="mt-4 max-h-85 space-y-2 overflow-auto pr-2 text-sm">
               {data.przeznaczenia.map((c) => (
                 <Link
                   key={c.id}
