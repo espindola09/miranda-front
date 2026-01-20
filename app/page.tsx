@@ -3,6 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 import BestsellerySliderClient from "@/components/home/BestsellerySliderClient";
 
+// ✅ NUEVO: Trustindex (Google Reviews) desde WP
+import GoogleReviewsTrustindex from "@/components/home/GoogleReviewsTrustindex";
+
 // Ajustá este import si tu helper existe con otro nombre/ruta.
 // Si ya tenés getProducts en "@/lib/woo", mantenelo así.
 import { getProducts } from "@/lib/woo";
@@ -106,6 +109,33 @@ export default async function Home() {
           viewAllHref="/kategoria-produktu/bestsellery"
         />
       ) : null}
+
+      {/* ✅ GOOGLE REVIEWS (Trustindex desde WP) */}
+      <section className="w-full bg-white">
+        <div className="mx-auto max-w-7xl px-6 pt-14 pb-10">
+          <div className="text-center">
+            <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#0f172a]">
+              To nas wyróżnia
+            </h2>
+
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm md:text-base text-black/80">
+              <span>Ocena</span>
+              <span className="font-semibold">5,0</span>
+              <span className="inline-flex items-center gap-1" aria-label="Ocena 5 na 5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className="text-[#f2c200] text-base leading-none">
+                    ★
+                  </span>
+                ))}
+              </span>
+              <span>na podstawie opinii z Google</span>
+            </div>
+          </div>
+
+          {/* Render real del shortcode desde WP */}
+          <GoogleReviewsTrustindex wpBaseUrl="https://drukdekoracje.pl" />
+        </div>
+      </section>
 
       {/* CUERPO (vacío por ahora) */}
       <section className="w-full">
