@@ -16,15 +16,21 @@ export default async function Home() {
   let bestsellery: any[] = [];
 
   try {
-    // ✅ URL absoluta al propio host (local o vercel)
+    // ✅ Construimos base URL ABSOLUTA (sirve igual en localhost y en Vercel)
     const h = await headers();
     const host = h.get("host") || "localhost:3000";
     const proto = process.env.NODE_ENV === "development" ? "http" : "https";
     const base = `${proto}://${host}`;
 
-    const r = await fetch(`${base}/api/bestsellery`, { cache: "no-store" });
-    const data = await r.json();
+    const r = await fetch(`${base}/api/bestsellery`, {
+      cache: "no-store",
+    });
 
+    if (!r.ok) {
+      throw new Error(`GET /api/bestsellery failed: ${r.status} ${r.statusText}`);
+    }
+
+    const data = await r.json();
     products = Array.isArray(data) ? data : [];
 
     // Filtrado por categoría slug “bestsellery” (o nombre “Bestsellery”)
@@ -44,7 +50,7 @@ export default async function Home() {
       bestsellery = bestsellery.slice(0, 12);
     }
   } catch (e) {
-    console.error("Bestsellery fetch failed:", e);
+    console.error("Home bestsellery fetch failed:", e);
     bestsellery = [];
   }
 
