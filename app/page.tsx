@@ -6,10 +6,13 @@ import BestsellerySliderClient from "@/components/home/BestsellerySliderClient";
 // ✅ NUEVO: Trustindex (Google Reviews) desde WP
 import GoogleReviewsTrustindex from "@/components/home/GoogleReviewsTrustindex";
 
-// ✅ NUEVO: Slider 5 categorías (debajo de Google Reviews)
-import CategoryFiveSlider from "@/components/home/CategoryFiveSlider";
-
 import { headers } from "next/headers";
+
+// ✅ NUEVO: Slider 5 categorías (ajusta el import al nombre real que ya creaste)
+import HomeCategorySlider from "@/components/home/CategoryFiveSlider";
+
+// ✅ NUEVO: Barra de beneficios debajo del slider
+import HomeBenefitsBar from "@/components/home/HomeBenefitsBar";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -135,7 +138,10 @@ export default async function Home() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm md:text-base text-black/80">
               <span>Ocena</span>
               <span className="font-semibold">5,0</span>
-              <span className="inline-flex items-center gap-1" aria-label="Ocena 5 na 5">
+              <span
+                className="inline-flex items-center gap-1"
+                aria-label="Ocena 5 na 5"
+              >
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} className="text-[#f2c200] text-base leading-none">
                     ★
@@ -148,11 +154,14 @@ export default async function Home() {
 
           {/* Render real del shortcode desde WP */}
           <GoogleReviewsTrustindex wpBaseUrl="https://drukdekoracje.pl" />
-
-          {/* ✅ EXACTO como la captura: debajo de Google Reviews */}
-          <CategoryFiveSlider />
         </div>
       </section>
+
+      {/* ✅ SLIDER 5 CATEGORÍAS (el que acabamos de crear) */}
+      <HomeCategorySlider />
+
+      {/* ✅ BENEFITS (exactamente debajo del slider) */}
+      <HomeBenefitsBar />
 
       {/* CUERPO (vacío por ahora) */}
       <section className="w-full">
