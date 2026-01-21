@@ -6,9 +6,7 @@ import BestsellerySliderClient from "@/components/home/BestsellerySliderClient";
 // ✅ NUEVO: Trustindex (Google Reviews) desde WP
 import GoogleReviewsTrustindex from "@/components/home/GoogleReviewsTrustindex";
 
-// Ajustá este import si tu helper existe con otro nombre/ruta.
-// Si ya tenés getProducts en "@/lib/woo", mantenelo así.
-import { getProducts } from "@/lib/woo";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -18,9 +16,16 @@ export default async function Home() {
   let bestsellery: any[] = [];
 
   try {
-    // Traemos más para poder filtrar “bestsellery” sin quedarnos cortos.
-    // Si tu getProducts acepta límite, esto funciona. Si no, lo adaptamos.
-    products = await getProducts(30);
+    // ✅ URL absoluta al propio host (local o vercel)
+    const h = await headers();
+    const host = h.get("host") || "localhost:3000";
+    const proto = process.env.NODE_ENV === "development" ? "http" : "https";
+    const base = `${proto}://${host}`;
+
+    const r = await fetch(`${base}/api/bestsellery`, { cache: "no-store" });
+    const data = await r.json();
+
+    products = Array.isArray(data) ? data : [];
 
     // Filtrado por categoría slug “bestsellery” (o nombre “Bestsellery”)
     bestsellery = (Array.isArray(products) ? products : []).filter((p: any) => {
@@ -39,7 +44,7 @@ export default async function Home() {
       bestsellery = bestsellery.slice(0, 12);
     }
   } catch (e) {
-    // Si falla el fetch, simplemente no mostramos el slider
+    console.error("Bestsellery fetch failed:", e);
     bestsellery = [];
   }
 
@@ -92,7 +97,7 @@ export default async function Home() {
                   alt="Twoja Fototapeta – największy wybór bestsellerów"
                   fill
                   priority
-                  fetchPriority="high" // ✅ MEJORA LCP: fuerza fetchpriority=high (lo que te pide Lighthouse)
+                  fetchPriority="high"
                   sizes="(max-width: 1024px) 100vw, 70vw"
                   className="object-cover"
                 />
