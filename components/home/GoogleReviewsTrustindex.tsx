@@ -94,9 +94,8 @@ export default function GoogleReviewsTrustindex({ wpBaseUrl }: Props) {
   const mountedRef = useRef(false);
 
   const endpoint = useMemo(() => {
-    const base = wpBaseUrl.replace(/\/$/, "");
-    return `${base}/wp-json/mm/v1/trustindex-google`;
-  }, [wpBaseUrl]);
+  return "/api/trustindex";
+  }, []);
 
   useEffect(() => {
     if (mountedRef.current) return;
