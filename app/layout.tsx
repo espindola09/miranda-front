@@ -36,6 +36,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl" suppressHydrationWarning>
+      <head>
+        {/* ✅ PRELOAD imagen central (equivalente a wp_head) */}
+        <link
+          rel="preload"
+          as="image"
+          href="https://drukdekoracje.pl/wp-content/uploads/2025/05/Plakaty.jpg"
+        />
+      </head>
+
       <body
         className={[
           geistSans.variable,

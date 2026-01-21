@@ -6,6 +6,9 @@ import BestsellerySliderClient from "@/components/home/BestsellerySliderClient";
 // ✅ NUEVO: Trustindex (Google Reviews) desde WP
 import GoogleReviewsTrustindex from "@/components/home/GoogleReviewsTrustindex";
 
+// ✅ NUEVO: Slider 5 categorías (debajo de Google Reviews)
+import CategoryFiveSlider from "@/components/home/CategoryFiveSlider";
+
 import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
@@ -145,6 +148,9 @@ export default async function Home() {
 
           {/* Render real del shortcode desde WP */}
           <GoogleReviewsTrustindex wpBaseUrl="https://drukdekoracje.pl" />
+
+          {/* ✅ EXACTO como la captura: debajo de Google Reviews */}
+          <CategoryFiveSlider />
         </div>
       </section>
 
