@@ -28,34 +28,56 @@ type PrzeznaczeniaItem = {
   href: string;
 };
 
+function safeArray<T>(v: any): T[] {
+  return Array.isArray(v) ? (v as T[]) : [];
+}
+
+/**
+ * ✅ Soporta ambas respuestas:
+ * - array directo:   [ {..}, {..} ]
+ * - objeto wrapper:  { ok: true, items: [ {..} ] }
+ */
+function normalizePrzeznaczeniaResponse(v: any): PrzeznaczeniaItem[] {
+  if (Array.isArray(v)) return v as PrzeznaczeniaItem[];
+  if (v && typeof v === "object" && Array.isArray((v as any).items)) return (v as any).items as PrzeznaczeniaItem[];
+  return [];
+}
+
 export default async function Home() {
   let products: any[] = [];
   let bestsellery: any[] = [];
   let przeznaczeniaSubcats: PrzeznaczeniaItem[] = [];
 
-  try {
-    // ✅ Construimos base URL ABSOLUTA (sirve igual en localhost y en Vercel)
-    const h = await headers();
-    const host = h.get("host") || "localhost:3000";
-    const proto = process.env.NODE_ENV === "development" ? "http" : "https";
-    const base = `${proto}://${host}`;
+  // ✅ Construimos base URL ABSOLUTA (sirve igual en localhost y en Vercel)
+  const h = await headers();
+  const host = h.get("host") || "localhost:3000";
 
-    // =========================
-    // BESTSELLERY
-    // =========================
-    const r = await fetch(`${base}/api/bestsellery`, {
-      cache: "no-store",
-    });
+  // ✅ En Vercel/Proxy, x-forwarded-proto suele venir; fallback a NODE_ENV
+  const xfProto = h.get("x-forwarded-proto");
+  const proto =
+    xfProto === "http" || xfProto === "https"
+      ? xfProto
+      : process.env.NODE_ENV === "development"
+        ? "http"
+        : "https";
+
+  const base = `${proto}://${host}`;
+
+  // =========================
+  // BESTSELLERY
+  // =========================
+  try {
+    const r = await fetch(`${base}/api/bestsellery`, { cache: "no-store" });
 
     if (!r.ok) {
       throw new Error(`GET /api/bestsellery failed: ${r.status} ${r.statusText}`);
     }
 
     const data = await r.json();
-    products = Array.isArray(data) ? data : [];
+    products = safeArray<any>(data);
 
-    bestsellery = (Array.isArray(products) ? products : []).filter((p: any) => {
-      const cats = Array.isArray(p?.categories) ? p.categories : [];
+    bestsellery = safeArray<any>(products).filter((p: any) => {
+      const cats = safeArray<any>(p?.categories);
       return cats.some((c: any) => {
         const slug = String(c?.slug || "").toLowerCase();
         const name = String(c?.name || "").toLowerCase();
@@ -63,26 +85,31 @@ export default async function Home() {
       });
     });
 
+    // Fallback: si no hay categoría o aún no está consistente, mostramos primeros 8
     if (!bestsellery.length) {
-      bestsellery = (Array.isArray(products) ? products : []).slice(0, 8);
+      bestsellery = safeArray<any>(products).slice(0, 8);
     } else {
       bestsellery = bestsellery.slice(0, 12);
     }
-
-    // =========================
-    // PRZEZNACZENIA SUBCATS
-    // =========================
-    const r2 = await fetch(`${base}/api/przeznaczenia-subcats`, {
-      cache: "no-store",
-    });
-
-    if (r2.ok) {
-      const j2 = await r2.json();
-      przeznaczeniaSubcats = Array.isArray(j2) ? (j2 as PrzeznaczeniaItem[]) : [];
-    }
   } catch (e) {
-    console.error("Home fetch failed:", e);
+    console.error("Home bestsellery fetch failed:", e);
     bestsellery = [];
+  }
+
+  // =========================
+  // PRZEZNACZENIA SUBCATS
+  // =========================
+  try {
+    const r2 = await fetch(`${base}/api/przeznaczenia-subcats`, { cache: "no-store" });
+
+    if (!r2.ok) {
+      throw new Error(`GET /api/przeznaczenia-subcats failed: ${r2.status} ${r2.statusText}`);
+    }
+
+    const j2 = await r2.json();
+    przeznaczeniaSubcats = normalizePrzeznaczeniaResponse(j2);
+  } catch (e) {
+    console.error("Home przeznaczenia-subcats fetch failed:", e);
     przeznaczeniaSubcats = [];
   }
 
@@ -144,10 +171,7 @@ export default async function Home() {
 
       {/* ✅ BESTSELLERY SLIDER */}
       {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
-        <BestsellerySliderClient
-          products={bestsellery}
-          viewAllHref="/kategoria-produktu/bestsellery"
-        />
+        <BestsellerySliderClient products={bestsellery} viewAllHref="/kategoria-produktu/bestsellery" />
       ) : null}
 
       {/* ✅ GOOGLE REVIEWS */}

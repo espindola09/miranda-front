@@ -10,7 +10,6 @@ type WooCat = {
   slug: string;
   parent: number;
   image?: { src?: string } | null;
-  permalink?: string;
 };
 
 function wpBase() {
@@ -18,9 +17,8 @@ function wpBase() {
 }
 
 /**
- * ✅ IMPORTANTE:
- * Nunca devolvemos Authorization: undefined.
- * Si faltan keys, devolvemos {} (objeto vacío) SIN propiedades opcionales.
+ * ✅ Nunca devolvemos Authorization: undefined.
+ * Si faltan keys, devolvemos {} (objeto vacío).
  */
 function wcAuthHeaders(): Record<string, string> {
   const key = process.env.WC_CONSUMER_KEY || "";
@@ -36,10 +34,11 @@ async function wcFetch<T>(path: string): Promise<T> {
   const base = wpBase();
   const url = `${base}/wp-json/wc/v3${path}`;
 
-  // ✅ Armamos headers sin undefined
   const auth = wcAuthHeaders();
+
   const headers: HeadersInit = {
     Accept: "application/json",
+    "User-Agent": "Mozilla/5.0 (Next.js Proxy)",
     ...(Object.keys(auth).length ? auth : {}),
   };
 
@@ -50,7 +49,8 @@ async function wcFetch<T>(path: string): Promise<T> {
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
-    throw new Error(`WC ${path} failed: ${res.status} ${res.statusText} ${txt}`);
+    // Esto es CLAVE para entender si es 401/403/Cloudflare, etc.
+    throw new Error(`WC ${path} failed: ${res.status} ${res.statusText} :: ${txt.slice(0, 300)}`);
   }
 
   return (await res.json()) as T;
@@ -67,7 +67,10 @@ export async function GET() {
     const parentId = parent?.id;
 
     if (!parentId) {
-      return NextResponse.json([], { status: 200 });
+      return NextResponse.json(
+        { ok: true, items: [], reason: "Parent category 'przeznaczenia' not found" },
+        { status: 200 }
+      );
     }
 
     // 2) Traer subcategorías por parent=<id>
@@ -75,7 +78,7 @@ export async function GET() {
       `/products/categories?parent=${parentId}&per_page=100&hide_empty=false`
     );
 
-    const data = (Array.isArray(subcats) ? subcats : []).map((c) => ({
+    const items = (Array.isArray(subcats) ? subcats : []).map((c) => ({
       id: c.id,
       name: c.name,
       slug: c.slug,
@@ -83,9 +86,22 @@ export async function GET() {
       href: `/kategoria-produktu/${c.slug}`,
     }));
 
-    return NextResponse.json(data, { status: 200 });
+    return NextResponse.json({ ok: true, items }, { status: 200 });
   } catch (e: any) {
-    console.error("API /przeznaczenia-subcats error:", e);
-    return NextResponse.json([], { status: 200 });
+    console.error("API /przeznaczenia-subcats error:", e?.message || e);
+
+    return NextResponse.json(
+      {
+        ok: false,
+        items: [],
+        error: e?.message || "Unknown error",
+        // te sirve para confirmar env en Vercel sin exponer secrets:
+        env: {
+          WP_BASE_URL: wpBase(),
+          HAS_WC_KEYS: Boolean(process.env.WC_CONSUMER_KEY && process.env.WC_CONSUMER_SECRET),
+        },
+      },
+      { status: 200 }
+    );
   }
 }
