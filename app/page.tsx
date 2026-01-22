@@ -3,23 +3,35 @@ import Image from "next/image";
 import Link from "next/link";
 import BestsellerySliderClient from "@/components/home/BestsellerySliderClient";
 
-// ✅ NUEVO: Trustindex (Google Reviews) desde WP
+// ✅ Trustindex (Google Reviews) desde WP
 import GoogleReviewsTrustindex from "@/components/home/GoogleReviewsTrustindex";
 
 import { headers } from "next/headers";
 
-// ✅ NUEVO: Slider 5 categorías (ajusta el import al nombre real que ya creaste)
-import HomeCategorySlider from "@/components/home/CategoryFiveSlider";
+// ✅ Slider 5 categorías (ya lo tenés)
+import CategoryFiveSlider from "@/components/home/CategoryFiveSlider";
 
-// ✅ NUEVO: Barra de beneficios debajo del slider
+// ✅ Barra beneficios (ya lo tenés)
 import HomeBenefitsBar from "@/components/home/HomeBenefitsBar";
+
+// ✅ NUEVO: Slider “Przeznaczenia” (subcategorías)
+import PrzeznaczeniaSubcatsSliderClient from "@/components/home/PrzeznaczeniaSubcatsSliderClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
+type PrzeznaczeniaItem = {
+  id: number;
+  name: string;
+  slug: string;
+  image: string;
+  href: string;
+};
+
 export default async function Home() {
   let products: any[] = [];
   let bestsellery: any[] = [];
+  let przeznaczeniaSubcats: PrzeznaczeniaItem[] = [];
 
   try {
     // ✅ Construimos base URL ABSOLUTA (sirve igual en localhost y en Vercel)
@@ -28,6 +40,9 @@ export default async function Home() {
     const proto = process.env.NODE_ENV === "development" ? "http" : "https";
     const base = `${proto}://${host}`;
 
+    // =========================
+    // BESTSELLERY
+    // =========================
     const r = await fetch(`${base}/api/bestsellery`, {
       cache: "no-store",
     });
@@ -39,7 +54,6 @@ export default async function Home() {
     const data = await r.json();
     products = Array.isArray(data) ? data : [];
 
-    // Filtrado por categoría slug “bestsellery” (o nombre “Bestsellery”)
     bestsellery = (Array.isArray(products) ? products : []).filter((p: any) => {
       const cats = Array.isArray(p?.categories) ? p.categories : [];
       return cats.some((c: any) => {
@@ -49,26 +63,37 @@ export default async function Home() {
       });
     });
 
-    // Fallback: si no hay categoría o aún no está consistente, mostramos primeros 8
     if (!bestsellery.length) {
       bestsellery = (Array.isArray(products) ? products : []).slice(0, 8);
     } else {
       bestsellery = bestsellery.slice(0, 12);
     }
+
+    // =========================
+    // PRZEZNACZENIA SUBCATS
+    // =========================
+    const r2 = await fetch(`${base}/api/przeznaczenia-subcats`, {
+      cache: "no-store",
+    });
+
+    if (r2.ok) {
+      const j2 = await r2.json();
+      przeznaczeniaSubcats = Array.isArray(j2) ? (j2 as PrzeznaczeniaItem[]) : [];
+    }
   } catch (e) {
-    console.error("Home bestsellery fetch failed:", e);
+    console.error("Home fetch failed:", e);
     bestsellery = [];
+    przeznaczeniaSubcats = [];
   }
 
   return (
     <main className="w-full bg-white">
-      {/* HERO (estático por ahora; luego slider) */}
+      {/* HERO */}
       <section className="w-full">
         <div className="w-full border-b border-[#c9b086]/60">
           <div className="grid w-full grid-cols-1 lg:grid-cols-[420px_1fr]">
             {/* PANEL IZQUIERDO */}
             <div className="bg-[#f3eee6] px-6 py-12 lg:px-14 lg:py-20">
-              {/* ✅ En mobile/tablet centrado; en escritorio (lg+) vuelve a la izquierda */}
               <div className="mx-auto max-w-md text-center lg:mx-0 lg:text-left">
                 <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-black sm:text-5xl">
                   Twoja
@@ -82,7 +107,6 @@ export default async function Home() {
                   bestsellerów
                 </p>
 
-                {/* CTA */}
                 <div className="mt-8 flex justify-center lg:justify-start">
                   <Link
                     href="/sklep-fototapety"
@@ -102,7 +126,6 @@ export default async function Home() {
 
             {/* PANEL DERECHO (imagen) */}
             <div className="relative w-full">
-              {/* ✅ MÁS ALTO (real): alturas explícitas para que se note */}
               <div className="relative w-full h-130 sm:h-150 lg:h-180 xl:h-205">
                 <Image
                   src="https://drukdekoracje.pl/wp-content/uploads/2025/11/AdobeStock_6609484541HD-v3-low.webp"
@@ -119,7 +142,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ✅ BESTSELLERY SLIDER (nuevo) */}
+      {/* ✅ BESTSELLERY SLIDER */}
       {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
         <BestsellerySliderClient
           products={bestsellery}
@@ -127,7 +150,7 @@ export default async function Home() {
         />
       ) : null}
 
-      {/* ✅ GOOGLE REVIEWS (Trustindex desde WP) */}
+      {/* ✅ GOOGLE REVIEWS */}
       <section className="w-full bg-white">
         <div className="mx-auto max-w-7xl px-6 pt-14 pb-10">
           <div className="text-center">
@@ -138,10 +161,7 @@ export default async function Home() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm md:text-base text-black/80">
               <span>Ocena</span>
               <span className="font-semibold">5,0</span>
-              <span
-                className="inline-flex items-center gap-1"
-                aria-label="Ocena 5 na 5"
-              >
+              <span className="inline-flex items-center gap-1" aria-label="Ocena 5 na 5">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} className="text-[#f2c200] text-base leading-none">
                     ★
@@ -152,16 +172,20 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Render real del shortcode desde WP */}
           <GoogleReviewsTrustindex wpBaseUrl="https://drukdekoracje.pl" />
         </div>
       </section>
 
-      {/* ✅ SLIDER 5 CATEGORÍAS (el que acabamos de crear) */}
-      <HomeCategorySlider />
+      {/* ✅ SLIDER 5 CATEGORÍAS */}
+      <CategoryFiveSlider />
 
-      {/* ✅ BENEFITS (exactamente debajo del slider) */}
+      {/* ✅ BENEFITS BAR */}
       <HomeBenefitsBar />
+
+      {/* ✅ NUEVO: PRZEZNACZENIA SUBCATS SLIDER (debajo de benefits bar) */}
+      {Array.isArray(przeznaczeniaSubcats) && przeznaczeniaSubcats.length > 0 ? (
+        <PrzeznaczeniaSubcatsSliderClient items={przeznaczeniaSubcats} />
+      ) : null}
 
       {/* CUERPO (vacío por ahora) */}
       <section className="w-full">
