@@ -31,18 +31,32 @@ type SubcatItem = {
   href: string;
 };
 
-type ApiMaybeItems =
-  | SubcatItem[]
-  | { ok?: boolean; items?: SubcatItem[]; error?: string; reason?: string; env?: any }
-  | any;
-
-function pickItems(payload: ApiMaybeItems): SubcatItem[] {
-  // Soporta:
-  // 1) Respuesta array: [...]
-  // 2) Respuesta objeto: { ok:true, items:[...] }
-  if (Array.isArray(payload)) return payload as SubcatItem[];
-  if (payload && Array.isArray(payload.items)) return payload.items as SubcatItem[];
+/**
+ * ✅ Soporta ambos formatos:
+ * 1) Array directo: [ {...}, {...} ]
+ * 2) Objeto: { ok: true, items: [ {...} ] }
+ */
+function normalizeItems<T = any>(payload: any): T[] {
+  if (Array.isArray(payload)) return payload as T[];
+  if (payload && Array.isArray(payload.items)) return payload.items as T[];
   return [];
+}
+
+/**
+ * ✅ Construye base URL robusto para localhost y Vercel
+ * - En Vercel suele venir x-forwarded-host / x-forwarded-proto
+ * - En local, usamos host normal
+ */
+function getBaseUrlFromHeaders(h: Headers): string {
+  const forwardedHost = h.get("x-forwarded-host");
+  const host = forwardedHost || h.get("host") || "localhost:3000";
+
+  const forwardedProto = h.get("x-forwarded-proto");
+  const proto =
+    forwardedProto ||
+    (process.env.NODE_ENV === "development" ? "http" : "https");
+
+  return `${proto}://${host}`;
 }
 
 export default async function Home() {
@@ -52,20 +66,8 @@ export default async function Home() {
   let tematySubcats: SubcatItem[] = [];
 
   try {
-    // ✅ Base URL ABSOLUTA (funciona igual en localhost y en Vercel)
     const h = await headers();
-    const host = h.get("host") || "localhost:3000";
-
-    // ✅ En Vercel a veces viene x-forwarded-proto
-    const xfProto = h.get("x-forwarded-proto");
-    const proto =
-      process.env.NODE_ENV === "development"
-        ? "http"
-        : xfProto === "http" || xfProto === "https"
-          ? xfProto
-          : "https";
-
-    const base = `${proto}://${host}`;
+    const base = getBaseUrlFromHeaders(h);
 
     // =========================
     // BESTSELLERY
@@ -99,24 +101,17 @@ export default async function Home() {
     // =========================
     const r2 = await fetch(`${base}/api/przeznaczenia-subcats`, { cache: "no-store" });
     if (r2.ok) {
-      const j2: ApiMaybeItems = await r2.json();
-      przeznaczeniaSubcats = pickItems(j2);
-      // Debug mínimo (solo server logs) por si Vercel devolviera ok:false
-      if (!przeznaczeniaSubcats.length && j2 && !Array.isArray(j2)) {
-        console.log("przeznaczenia-subcats payload:", j2);
-      }
+      const j2 = await r2.json();
+      przeznaczeniaSubcats = normalizeItems<SubcatItem>(j2);
     }
 
     // =========================
-    // TEMATY SUBCATS
+    // TEMATY SUBCATS (NUEVO)
     // =========================
     const r3 = await fetch(`${base}/api/tematy-subcats`, { cache: "no-store" });
     if (r3.ok) {
-      const j3: ApiMaybeItems = await r3.json();
-      tematySubcats = pickItems(j3);
-      if (!tematySubcats.length && j3 && !Array.isArray(j3)) {
-        console.log("tematy-subcats payload:", j3);
-      }
+      const j3 = await r3.json();
+      tematySubcats = normalizeItems<SubcatItem>(j3);
     }
   } catch (e) {
     console.error("Home fetch failed:", e);
@@ -153,7 +148,7 @@ export default async function Home() {
                       "inline-flex items-center justify-center",
                       "bg-black px-10 py-3",
                       "text-sm font-semibold",
-                      "text-white",
+                      "text-white!",
                       "cursor-pointer",
                     ].join(" ")}
                   >
@@ -183,7 +178,10 @@ export default async function Home() {
 
       {/* ✅ BESTSELLERY SLIDER */}
       {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
-        <BestsellerySliderClient products={bestsellery} viewAllHref="/kategoria-produktu/bestsellery" />
+        <BestsellerySliderClient
+          products={bestsellery}
+          viewAllHref="/kategoria-produktu/bestsellery"
+        />
       ) : null}
 
       {/* ✅ GOOGLE REVIEWS */}
