@@ -17,8 +17,11 @@ import HomeBenefitsBar from "@/components/home/HomeBenefitsBar";
 // ✅ Slider “Przeznaczenia” (ya lo tenés)
 import PrzeznaczeniaSubcatsSliderClient from "@/components/home/PrzeznaczeniaSubcatsSliderClient";
 
-// ✅ NUEVO: Slider “Tematy” circular
+// ✅ Slider “Tematy” circular
 import TematySubcatsSliderClient from "@/components/home/TematySubcatsSliderClient";
+
+// ✅ NUEVO slider independiente
+import OstatnioDodaneSliderClient from "@/components/home/OstatnioDodaneSliderClient";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -44,17 +47,28 @@ function normalizeItems<T = any>(payload: any): T[] {
 
 /**
  * ✅ Construye base URL robusto para localhost y Vercel
- * - En Vercel suele venir x-forwarded-host / x-forwarded-proto
- * - En local, usamos host normal
+ * - Vercel: x-forwarded-host / x-forwarded-proto
+ * - Local: host normal
+ * - Fallback: NEXT_PUBLIC_SITE_URL / VERCEL_URL
  */
 function getBaseUrlFromHeaders(h: Headers): string {
   const forwardedHost = h.get("x-forwarded-host");
-  const host = forwardedHost || h.get("host") || "localhost:3000";
+  const host = forwardedHost || h.get("host");
 
   const forwardedProto = h.get("x-forwarded-proto");
   const proto =
     forwardedProto ||
     (process.env.NODE_ENV === "development" ? "http" : "https");
+
+  const envHost =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
+
+  if (!host) {
+    if (envHost.startsWith("http")) return envHost;
+    if (envHost) return `https://${envHost}`;
+    return "http://localhost:3000";
+  }
 
   return `${proto}://${host}`;
 }
@@ -64,24 +78,36 @@ export default async function Home() {
   let bestsellery: any[] = [];
   let przeznaczeniaSubcats: SubcatItem[] = [];
   let tematySubcats: SubcatItem[] = [];
+  let ostatnioDodane: any[] = [];
 
   try {
-    const h = await headers();
-    const base = getBaseUrlFromHeaders(h);
+    const h = headers();
+    const base = getBaseUrlFromHeaders(await h);
+
+    async function safeJson<T>(url: string): Promise<T | null> {
+      const res = await fetch(url, { cache: "no-store" });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        console.error(`Fetch failed: ${url} -> ${res.status} ${res.statusText}`, txt.slice(0, 300));
+        return null;
+      }
+
+      try {
+        return (await res.json()) as T;
+      } catch (e) {
+        console.error(`JSON parse failed: ${url}`, e);
+        return null;
+      }
+    }
 
     // =========================
     // BESTSELLERY
     // =========================
-    const r = await fetch(`${base}/api/bestsellery`, { cache: "no-store" });
-
-    if (!r.ok) {
-      throw new Error(`GET /api/bestsellery failed: ${r.status} ${r.statusText}`);
-    }
-
-    const data = await r.json();
+    const data = await safeJson<any[]>(`${base}/api/bestsellery`);
     products = Array.isArray(data) ? data : [];
 
-    bestsellery = (Array.isArray(products) ? products : []).filter((p: any) => {
+    const filtered = (Array.isArray(products) ? products : []).filter((p: any) => {
       const cats = Array.isArray(p?.categories) ? p.categories : [];
       return cats.some((c: any) => {
         const slug = String(c?.slug || "").toLowerCase();
@@ -90,34 +116,35 @@ export default async function Home() {
       });
     });
 
-    if (!bestsellery.length) {
+    if (!filtered.length) {
       bestsellery = (Array.isArray(products) ? products : []).slice(0, 8);
     } else {
-      bestsellery = bestsellery.slice(0, 12);
+      bestsellery = filtered.slice(0, 12);
     }
 
     // =========================
     // PRZEZNACZENIA SUBCATS
     // =========================
-    const r2 = await fetch(`${base}/api/przeznaczenia-subcats`, { cache: "no-store" });
-    if (r2.ok) {
-      const j2 = await r2.json();
-      przeznaczeniaSubcats = normalizeItems<SubcatItem>(j2);
-    }
+    const j2 = await safeJson<any>(`${base}/api/przeznaczenia-subcats`);
+    przeznaczeniaSubcats = normalizeItems<SubcatItem>(j2);
 
     // =========================
-    // TEMATY SUBCATS (NUEVO)
+    // TEMATY SUBCATS
     // =========================
-    const r3 = await fetch(`${base}/api/tematy-subcats`, { cache: "no-store" });
-    if (r3.ok) {
-      const j3 = await r3.json();
-      tematySubcats = normalizeItems<SubcatItem>(j3);
-    }
+    const j3 = await safeJson<any>(`${base}/api/tematy-subcats`);
+    tematySubcats = normalizeItems<SubcatItem>(j3);
+
+    // =========================
+    // ✅ OSTATNIO DODANE (Nowości)
+    // =========================
+    const j4 = await safeJson<any[]>(`${base}/api/ostatnio-dodane`);
+    ostatnioDodane = Array.isArray(j4) ? j4 : [];
   } catch (e) {
     console.error("Home fetch failed:", e);
     bestsellery = [];
     przeznaczeniaSubcats = [];
     tematySubcats = [];
+    ostatnioDodane = [];
   }
 
   return (
@@ -178,10 +205,7 @@ export default async function Home() {
 
       {/* ✅ BESTSELLERY SLIDER */}
       {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
-        <BestsellerySliderClient
-          products={bestsellery}
-          viewAllHref="/kategoria-produktu/bestsellery"
-        />
+        <BestsellerySliderClient products={bestsellery} viewAllHref="/kategoria-produktu/bestsellery" />
       ) : null}
 
       {/* ✅ GOOGLE REVIEWS */}
@@ -224,6 +248,11 @@ export default async function Home() {
       {/* ✅ TEMATY SUBCATS SLIDER (CIRCULAR) */}
       {Array.isArray(tematySubcats) && tematySubcats.length > 0 ? (
         <TematySubcatsSliderClient items={tematySubcats} />
+      ) : null}
+
+      {/* ✅ NUEVO SLIDER “NOWOŚCI” (ABAJO DE TEMATY) */}
+      {Array.isArray(ostatnioDodane) && ostatnioDodane.length > 0 ? (
+        <OstatnioDodaneSliderClient products={ostatnioDodane} viewAllHref="/sklep-fototapety" />
       ) : null}
 
       {/* CUERPO (vacío por ahora) */}
