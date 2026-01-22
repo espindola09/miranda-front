@@ -31,12 +31,19 @@ type SubcatItem = {
   href: string;
 };
 
-type ApiListResp = {
-  ok?: boolean;
-  items?: SubcatItem[];
-  error?: string;
-  reason?: string;
-};
+type ApiMaybeItems =
+  | SubcatItem[]
+  | { ok?: boolean; items?: SubcatItem[]; error?: string; reason?: string; env?: any }
+  | any;
+
+function pickItems(payload: ApiMaybeItems): SubcatItem[] {
+  // Soporta:
+  // 1) Respuesta array: [...]
+  // 2) Respuesta objeto: { ok:true, items:[...] }
+  if (Array.isArray(payload)) return payload as SubcatItem[];
+  if (payload && Array.isArray(payload.items)) return payload.items as SubcatItem[];
+  return [];
+}
 
 export default async function Home() {
   let products: any[] = [];
@@ -45,13 +52,19 @@ export default async function Home() {
   let tematySubcats: SubcatItem[] = [];
 
   try {
-    // ✅ Construimos base URL ABSOLUTA (sirve igual en localhost y en Vercel)
+    // ✅ Base URL ABSOLUTA (funciona igual en localhost y en Vercel)
     const h = await headers();
     const host = h.get("host") || "localhost:3000";
 
-    // ✅ En Vercel/producción, forzamos https
-    // ✅ En dev local, http
-    const proto = process.env.NODE_ENV === "development" ? "http" : "https";
+    // ✅ En Vercel a veces viene x-forwarded-proto
+    const xfProto = h.get("x-forwarded-proto");
+    const proto =
+      process.env.NODE_ENV === "development"
+        ? "http"
+        : xfProto === "http" || xfProto === "https"
+          ? xfProto
+          : "https";
+
     const base = `${proto}://${host}`;
 
     // =========================
@@ -83,34 +96,26 @@ export default async function Home() {
 
     // =========================
     // PRZEZNACZENIA SUBCATS
-    // ✅ Tu estaba el bug: la API devuelve { ok, items }
     // =========================
     const r2 = await fetch(`${base}/api/przeznaczenia-subcats`, { cache: "no-store" });
     if (r2.ok) {
-      const j2 = (await r2.json()) as ApiListResp | SubcatItem[];
-
-      // ✅ soporta ambos formatos:
-      // - array directo (legacy)
-      // - { ok, items } (actual)
-      if (Array.isArray(j2)) {
-        przeznaczeniaSubcats = j2 as SubcatItem[];
-      } else {
-        przeznaczeniaSubcats = Array.isArray(j2?.items) ? (j2.items as SubcatItem[]) : [];
+      const j2: ApiMaybeItems = await r2.json();
+      przeznaczeniaSubcats = pickItems(j2);
+      // Debug mínimo (solo server logs) por si Vercel devolviera ok:false
+      if (!przeznaczeniaSubcats.length && j2 && !Array.isArray(j2)) {
+        console.log("przeznaczenia-subcats payload:", j2);
       }
     }
 
     // =========================
     // TEMATY SUBCATS
-    // ✅ Misma corrección que arriba
     // =========================
     const r3 = await fetch(`${base}/api/tematy-subcats`, { cache: "no-store" });
     if (r3.ok) {
-      const j3 = (await r3.json()) as ApiListResp | SubcatItem[];
-
-      if (Array.isArray(j3)) {
-        tematySubcats = j3 as SubcatItem[];
-      } else {
-        tematySubcats = Array.isArray(j3?.items) ? (j3.items as SubcatItem[]) : [];
+      const j3: ApiMaybeItems = await r3.json();
+      tematySubcats = pickItems(j3);
+      if (!tematySubcats.length && j3 && !Array.isArray(j3)) {
+        console.log("tematy-subcats payload:", j3);
       }
     }
   } catch (e) {
@@ -148,7 +153,7 @@ export default async function Home() {
                       "inline-flex items-center justify-center",
                       "bg-black px-10 py-3",
                       "text-sm font-semibold",
-                      "text-white!",
+                      "text-white",
                       "cursor-pointer",
                     ].join(" ")}
                   >
@@ -178,10 +183,7 @@ export default async function Home() {
 
       {/* ✅ BESTSELLERY SLIDER */}
       {Array.isArray(bestsellery) && bestsellery.length > 0 ? (
-        <BestsellerySliderClient
-          products={bestsellery}
-          viewAllHref="/kategoria-produktu/bestsellery"
-        />
+        <BestsellerySliderClient products={bestsellery} viewAllHref="/kategoria-produktu/bestsellery" />
       ) : null}
 
       {/* ✅ GOOGLE REVIEWS */}
@@ -221,7 +223,7 @@ export default async function Home() {
         <PrzeznaczeniaSubcatsSliderClient items={przeznaczeniaSubcats} />
       ) : null}
 
-      {/* ✅ TEMATY SUBCATS SLIDER (CIRCULAR) — debajo del anterior */}
+      {/* ✅ TEMATY SUBCATS SLIDER (CIRCULAR) */}
       {Array.isArray(tematySubcats) && tematySubcats.length > 0 ? (
         <TematySubcatsSliderClient items={tematySubcats} />
       ) : null}
